@@ -10,8 +10,6 @@ The Chained Select Enhancer for Gravity Forms adds the following features to Gra
 2. **Hide Columns**: Allows hiding specific columns in the chained select field.
 3. **Full Width**: Makes vertical chained selects full width.
 
-These enhancements provide a more streamlined user experience and greater flexibility in form design.
-
 ## Prerequisites
 
 This plugin requires:

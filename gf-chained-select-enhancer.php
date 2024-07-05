@@ -1,11 +1,11 @@
 <?php
 /**
  * Plugin Name: Chained Select Enhancer for Gravity Forms
- * Plugin URI: https://example.com/
+ * Plugin URI: https://github.com/guilamu/gf-chained-select-enhancer
  * Description: Enhances Gravity Forms Chained Selects with auto-select functionality and column hiding options.
  * Version: 1.00
- * Author: Your Name
- * Author URI: https://example.com/
+ * Author: Guilamu
+ * Author URI: guilamu@gmail.com
  * Text Domain: gf-chained-select-enhancer
  */
 

@@ -62,4 +62,4 @@ This project is licensed under the GPL v2 or later.
 
 ## Acknowledgements
 
-Thanks to the GravityWiz team for helping me throught the years with anything related to Gravity Forms!
+Thanks to the GravityWiz team for helping me through the years with anything related to Gravity Forms!

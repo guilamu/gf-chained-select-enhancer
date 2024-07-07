@@ -1,7 +1,8 @@
 # Chained Select Enhancer for Gravity Forms
 
 This plugin enhances the functionality of Gravity Forms Chained Selects by adding auto-select capabilities, column hiding options, and full-width display for vertical chained selects.
-<img src="https://github.com/guilamu/gf-chained-select-enhancer/blob/main/screenshot.png" align="right" width="300" alt="Plugin Screenshot">
+
+![Plugin Screenshot](https://github.com/guilamu/gf-chained-select-enhancer/blob/main/screenshot.png)
 
 ## Description
 

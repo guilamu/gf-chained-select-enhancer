@@ -4,6 +4,8 @@ This plugin enhances the functionality of Gravity Forms Chained Selects by addin
 
 ![Screenshot](https://github.com/guilamu/gf-chained-select-enhancer/blob/main/screenshot.png?raw=true "Screenshot")
 
+<img src="https://github.com/guilamu/gf-chained-select-enhancer/blob/main/screenshot.png" align="right" width="300" alt="Plugin Screenshot">
+
 ## Description
 
 The Chained Select Enhancer for Gravity Forms adds the following features to Gravity Forms Chained Selects:

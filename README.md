@@ -64,7 +64,7 @@ This project is licensed under the GPL v2 or later.
 
 A million thanks to the wizards from [GravityWiz](https://gravitywiz.com/) (David, Samuel, Matt, Saif, you're the bests!) for helping me through the years with anything related to Gravity Forms!
 
-# Change Log
+## Change Log
 
 * 2024-07-01 -- 1.0
   * Initial version

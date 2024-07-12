@@ -58,7 +58,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## Planned feature (help needed!)
 
-This one is beyond my capabilities and I guess I won't be able to add them alone so any help is more than welcome:
+This one is beyond my capabilities and I guess I won't be able to add it alone so any help is more than welcome:
 - Download the uploaded csv file (storing it in the WordPress /uploads directory and add a href on the name of the file)
 
 ## License

@@ -135,7 +135,13 @@ class GF_Auto_Select_Chained_Selects {
                         foreach ($columns as $column) {
                             $column = trim($column);
                             if (is_numeric($column)) {
-                                $css .= "#input_{$form['id']}_{$field->id}_{$column} { display: none !important; height: 0; margin: 0; padding: 0; overflow: hidden;}\n";
+                                    $css .= "#input_{$form['id']}_{$field->id}_{$column}_container { 
+                                    display: none !important;
+                                    height: 0 !important;
+                                    margin: 0 !important;
+                                    padding: 0 !important;
+                                    overflow: hidden !important;
+                                }\n";
                             }
                         }
                     }

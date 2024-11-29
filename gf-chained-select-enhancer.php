@@ -3,7 +3,7 @@
  * Plugin Name: Chained Select Enhancer for Gravity Forms
  * Plugin URI: https://github.com/guilamu/gf-chained-select-enhancer
  * Description: Enhances Gravity Forms Chained Selects with auto-select functionality and column hiding options.
- * Version: 1.00
+ * Version: 1.01
  * Author: Guilamu
  * Author URI: guilamu@gmail.com
  * Text Domain: gf-chained-select-enhancer
@@ -135,7 +135,7 @@ class GF_Auto_Select_Chained_Selects {
                         foreach ($columns as $column) {
                             $column = trim($column);
                             if (is_numeric($column)) {
-                                $css .= "#input_{$form['id']}_{$field->id}_{$column} { display: none !important; }\n";
+                                $css .= "#input_{$form['id']}_{$field->id}_{$column} { display: none !important; height: 0; margin: 0; padding: 0; overflow: hidden;}\n";
                             }
                         }
                     }

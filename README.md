@@ -75,4 +75,4 @@ A million thanks to the wizards from [GravityWiz](https://gravitywiz.com/) (Davi
   * Initial version
 
 * 2024-11-29 -- 1.01
-  * Hidden lines are now proprely hidden
+  * Hidden lines are now properly hidden

@@ -35,7 +35,7 @@ After activation, new options will be available in the Gravity Forms editor for 
 
 - **Automatically select when only one option is available**: Enables auto-select functionality.
 - **Make vertical chained select full width**: Makes the field full width when in vertical layout.
-- **Hide columns**: When you add a Chained Select field with multiple columns, the plugin now automatically detects all available columns and displays a toggle switch for each one.)
+- **Hide columns**: When you add a Chained Select field with multiple columns, the plugin now automatically detects all available columns and displays a toggle switch for each one.
 
 ## Translation
 

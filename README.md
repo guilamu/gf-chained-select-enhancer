@@ -77,5 +77,5 @@ A million thanks to the wizards from [GravityWiz](https://gravitywiz.com/) (Davi
   * Hidden lines are now properly hidden
 
 * 2025-11-05 -- 1.1
-  * Major column hiding Enhancement
+  * Major column hiding enhancement
 

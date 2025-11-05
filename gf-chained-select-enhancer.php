@@ -3,7 +3,7 @@
  * Plugin Name: Chained Select Enhancer for Gravity Forms
  * Plugin URI: https://github.com/guilamu/gf-chained-select-enhancer
  * Description: Enhances Gravity Forms Chained Selects with auto-select functionality and column hiding options.
- * Version: 1.03
+ * Version: 1.10
  * Author: Guilamu
  * Author URI: guilamu@gmail.com
  * Text Domain: gf-chained-select-enhancer
@@ -26,6 +26,7 @@ class GF_Auto_Select_Chained_Selects {
         add_filter('gform_chained_selects_input_choices', array($this, 'auto_select_only_choice'), 10, 3);
         add_action('plugins_loaded', array($this, 'load_plugin_textdomain'));
         add_action('wp_head', array($this, 'output_hide_columns_css'));
+        add_action('admin_head', array($this, 'add_toggle_switch_styles'));
     }
 
     /**
@@ -33,6 +34,100 @@ class GF_Auto_Select_Chained_Selects {
      */
     public function load_plugin_textdomain() {
         load_plugin_textdomain('gf-chained-select-enhancer', false, dirname(plugin_basename(__FILE__)) . '/languages/');
+    }
+
+    /**
+     * Add toggle switch styles to admin
+     */
+    public function add_toggle_switch_styles() {
+        $screen = get_current_screen();
+        if ($screen && strpos($screen->id, 'gf_edit_forms') !== false) {
+            ?>
+            <style type="text/css">
+                .hide_columns_setting .gfcs-toggle-switches {
+                    margin-top: 10px;
+                    clear: both;
+                }
+                .hide_columns_setting .gfcs-toggle-item {
+                    display: flex !important;
+                    align-items: center;
+                    margin-bottom: 8px;
+                    padding: 6px 0;
+                    width: 100%;
+                }
+                .hide_columns_setting .gfcs-toggle-switch {
+                    position: relative;
+                    display: inline-block !important;
+                    width: 44px !important;
+                    height: 24px !important;
+                    margin-right: 10px;
+                    flex-shrink: 0;
+                    vertical-align: middle;
+                }
+                .hide_columns_setting .gfcs-toggle-switch input[type="checkbox"] {
+                    opacity: 0 !important;
+                    width: 0 !important;
+                    height: 0 !important;
+                    position: absolute !important;
+                    margin: 0 !important;
+                    padding: 0 !important;
+                }
+                .hide_columns_setting .gfcs-toggle-slider {
+                    position: absolute;
+                    cursor: pointer;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background-color: #22a753;
+                    transition: .3s;
+                    border-radius: 24px;
+                    width: 44px;
+                    height: 24px;
+                }
+                .hide_columns_setting .gfcs-toggle-slider:before {
+                    position: absolute;
+                    content: "";
+                    height: 18px;
+                    width: 18px;
+                    left: 23px;
+                    bottom: 3px;
+                    background-color: white;
+                    transition: .3s;
+                    border-radius: 50%;
+                }
+                .hide_columns_setting .gfcs-toggle-switch input[type="checkbox"]:checked + .gfcs-toggle-slider {
+                    background-color: #ccc;
+                }
+                .hide_columns_setting .gfcs-toggle-switch input[type="checkbox"]:focus + .gfcs-toggle-slider {
+                    box-shadow: 0 0 1px #22a753;
+                }
+                .hide_columns_setting .gfcs-toggle-switch input[type="checkbox"]:checked + .gfcs-toggle-slider:before {
+                    transform: translateX(-20px);
+                }
+                .hide_columns_setting .gfcs-toggle-label {
+                    font-size: 13px;
+                    color: #333;
+                    cursor: pointer;
+                    user-select: none;
+                    flex: 1;
+                    line-height: 24px;
+                }
+                .hide_columns_setting .gfcs-no-columns {
+                    color: #666;
+                    font-style: italic;
+                    padding: 8px 0;
+                }
+                .hide_columns_setting .gfcs-help-text {
+                    color: #666;
+                    font-size: 12px;
+                    margin-top: 5px;
+                    margin-bottom: 8px;
+                    font-style: italic;
+                }
+            </style>
+            <?php
+        }
     }
 
     /**
@@ -54,10 +149,14 @@ class GF_Auto_Select_Chained_Selects {
                 </label>
             </li>
             <li class="hide_columns_setting field_setting">
-                <label for="field_hide_columns" class="inline">
-                    <?php esc_html_e('Hide columns (comma-separated)', 'gf-chained-select-enhancer'); ?>
+                <label for="field_hide_columns" class="inline" style="display: block; margin-bottom: 5px;">
+                    <?php esc_html_e('Hide Columns', 'gf-chained-select-enhancer'); ?>
                 </label>
-                <textarea id="field_hide_columns" onchange="SetFieldProperty('hideColumns', this.value);" rows="3" style="width: 100%;"></textarea>
+                <div class="gfcs-help-text">
+                    <?php esc_html_e('Blue = Visible | Grey = Hidden', 'gf-chained-select-enhancer'); ?>
+                </div>
+                <div id="gfcs_column_toggles" class="gfcs-toggle-switches"></div>
+                <input type="hidden" id="field_hide_columns" onchange="SetFieldProperty('hideColumns', this.value);" />
             </li>
             <?php
         }
@@ -72,11 +171,119 @@ class GF_Auto_Select_Chained_Selects {
             // Add new field settings to chained select fields
             fieldSettings.chainedselect += ', .auto_select_setting, .hide_columns_setting, .full_width_setting';
             
+            // Function to count columns in chained select
+            function gfcsCountColumns(field) {
+                if (!field || !field.inputs || !Array.isArray(field.inputs)) {
+                    return 0;
+                }
+                return field.inputs.length;
+            }
+
+            // Function to get column labels
+            function gfcsGetColumnLabels(field) {
+                var labels = [];
+                if (field && field.inputs && Array.isArray(field.inputs)) {
+                    field.inputs.forEach(function(input, index) {
+                        var label = input.label || 'Column ' + (index + 1);
+                        labels.push(label);
+                    });
+                }
+                return labels;
+            }
+
+            // Function to render toggle switches
+            function gfcsRenderColumnToggles(field) {
+                var container = jQuery('#gfcs_column_toggles');
+                container.empty();
+                
+                var columnCount = gfcsCountColumns(field);
+                
+                if (columnCount === 0) {
+                    container.html('<div class="gfcs-no-columns">' + 
+                        <?php echo json_encode(__('No columns detected. Add choices to see column toggles.', 'gf-chained-select-enhancer')); ?> + 
+                        '</div>');
+                    return;
+                }
+
+                var columnLabels = gfcsGetColumnLabels(field);
+                var hiddenColumns = gfcsGetHiddenColumns();
+
+                for (var i = 1; i <= columnCount; i++) {
+                    var columnLabel = columnLabels[i - 1] || ('Column ' + i);
+                    var isHidden = hiddenColumns.indexOf(i) !== -1;
+                    
+                    var toggleHtml = 
+                        '<div class="gfcs-toggle-item">' +
+                            '<label class="gfcs-toggle-switch">' +
+                                '<input type="checkbox" ' +
+                                    'data-column="' + i + '" ' +
+                                    'onchange="gfcsToggleColumn(this)" ' +
+                                    (isHidden ? 'checked' : '') + '>' +
+                                '<span class="gfcs-toggle-slider"></span>' +
+                            '</label>' +
+                            '<span class="gfcs-toggle-label" onclick="gfcsToggleLabelClick(this)">' +
+                                columnLabel + ' <span style="color: #999; font-size: 11px;">(' + 
+                                (isHidden ? 'Hidden' : 'Visible') + ')</span>' +
+                            '</span>' +
+                        '</div>';
+                    
+                    container.append(toggleHtml);
+                }
+            }
+
+            // Function to get hidden columns from field property
+            function gfcsGetHiddenColumns() {
+                var hideColumnsValue = jQuery('#field_hide_columns').val();
+                if (!hideColumnsValue) {
+                    return [];
+                }
+                return hideColumnsValue.split(',').map(function(col) {
+                    return parseInt(col.trim());
+                }).filter(function(col) {
+                    return !isNaN(col);
+                });
+            }
+
+            // Function to update hidden columns field
+            function gfcsUpdateHiddenColumns() {
+                var hiddenColumns = [];
+                jQuery('#gfcs_column_toggles input[type="checkbox"]:checked').each(function() {
+                    hiddenColumns.push(jQuery(this).data('column'));
+                });
+                
+                var hideColumnsValue = hiddenColumns.join(',');
+                jQuery('#field_hide_columns').val(hideColumnsValue).trigger('change');
+            }
+
+            // Toggle column visibility
+            window.gfcsToggleColumn = function(checkbox) {
+                gfcsUpdateHiddenColumns();
+            };
+
+            // Toggle when clicking label
+            window.gfcsToggleLabelClick = function(label) {
+                var checkbox = jQuery(label).siblings('.gfcs-toggle-switch').find('input[type="checkbox"]');
+                checkbox.prop('checked', !checkbox.prop('checked'));
+                gfcsUpdateHiddenColumns();
+            };
+
             // Set field properties when loading field settings
             jQuery(document).on('gform_load_field_settings', function(event, field, form) {
                 jQuery('#field_auto_select').prop('checked', field.autoSelectOnly == true);
                 jQuery('#field_hide_columns').val(field.hideColumns || '');
                 jQuery('#field_full_width').prop('checked', field.fullWidth == true);
+                
+                // Render column toggles for chained select fields
+                if (field.type === 'chainedselect') {
+                    gfcsRenderColumnToggles(field);
+                }
+            });
+
+            // Re-render toggles when field is updated (e.g., when choices are modified)
+            jQuery(document).on('gform_field_updated', function(event, field, form) {
+                if (field.type === 'chainedselect') {
+                    gfcsRenderColumnToggles(field);
+                }
             });
         </script>
         <?php

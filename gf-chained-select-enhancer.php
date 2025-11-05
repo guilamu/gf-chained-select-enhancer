@@ -165,6 +165,12 @@ class GF_Auto_Select_Chained_Selects {
     public function editor_script() {
         ?>
         <script type='text/javascript'>
+            // Translation strings for JavaScript
+            var gfcsLabels = {
+                hidden: '<?php esc_html_e("Hidden", "gf-chained-select-enhancer"); ?>',
+                visible: '<?php esc_html_e("Visible", "gf-chained-select-enhancer"); ?>'
+            };
+
             // Add new field settings to chained select fields
             fieldSettings.chainedselect += ', .auto_select_setting, .hide_columns_setting, .full_width_setting';
             
@@ -220,7 +226,7 @@ class GF_Auto_Select_Chained_Selects {
                             '</label>' +
                             '<span class="gfcs-toggle-label" onclick="gfcsToggleLabelClick(this)">' +
                                 columnLabel + ' <span style="color: #999; font-size: 11px;">(' + 
-                                (isHidden ? 'Hidden' : 'Visible') + ')</span>' +
+                                (isHidden ? gfcsLabels.hidden : gfcsLabels.visible) + ')</span>' +
                             '</span>' +
                         '</div>';
                     

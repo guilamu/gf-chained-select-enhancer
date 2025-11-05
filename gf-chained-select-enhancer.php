@@ -153,7 +153,7 @@ class GF_Auto_Select_Chained_Selects {
                     <?php esc_html_e('Hide Columns', 'gf-chained-select-enhancer'); ?>
                 </label>
                 <div class="gfcs-help-text">
-                    <?php esc_html_e('Blue = Visible | Grey = Hidden', 'gf-chained-select-enhancer'); ?>
+                    <?php esc_html_e('Green = Visible | Grey = Hidden', 'gf-chained-select-enhancer'); ?>
                 </div>
                 <div id="gfcs_column_toggles" class="gfcs-toggle-switches"></div>
                 <input type="hidden" id="field_hide_columns" onchange="SetFieldProperty('hideColumns', this.value);" />

@@ -35,7 +35,7 @@ After activation, new options will be available in the Gravity Forms editor for 
 
 - **Automatically select when only one option is available**: Enables auto-select functionality.
 - **Make vertical chained select full width**: Makes the field full width when in vertical layout.
-- **Hide columns**: Enter comma-separated column numbers to hide specific columns.
+- **Hide columns**: When you add a Chained Select field with multiple columns, the plugin now automatically detects all available columns and displays a toggle switch for each one.)
 
 ## Translation
 
@@ -70,9 +70,12 @@ This project is licensed under the GPL v2 or later.
 A million thanks to the wizards from [GravityWiz](https://gravitywiz.com/) (David, Samuel, Matt, Saif, you're the bests!) for helping me through the years with anything related to Gravity Forms!
 
 ## Change Log
-
 * 2024-07-01 -- 1.0
   * Initial version
 
 * 2024-11-29 -- 1.01
   * Hidden lines are now properly hidden
+
+* 2025-11-05 -- 1.1
+  * Major column hiding Enhancement
+

@@ -1,0 +1,37 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: Chained Select Enhancer for Gravity Forms\n"
+"Report-Msgid-Bugs-To: https://github.com/guilamu/gf-chained-select-enhancer\n"
+"POT-Creation-Date: 2024-11-05 17:15+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+
+#: gf-chained-select-enhancer.php
+msgid "Automatically select when only one option is available"
+msgstr ""
+
+#: gf-chained-select-enhancer.php
+msgid "Make vertical chained select full width"
+msgstr ""
+
+#: gf-chained-select-enhancer.php
+msgid "Hide Columns"
+msgstr ""
+
+#: gf-chained-select-enhancer.php
+msgid "No columns detected. Add choices to see column toggles."
+msgstr ""
+
+#: gf-chained-select-enhancer.php
+msgid "Hidden"
+msgstr ""
+
+#: gf-chained-select-enhancer.php
+msgid "Visible"
+msgstr ""

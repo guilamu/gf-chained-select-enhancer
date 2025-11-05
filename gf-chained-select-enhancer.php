@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Chained Select Enhancer for Gravity Forms
  * Description: Enhances Gravity Forms Chained Selects with auto-select, column hiding (with improved UI), and full-width display
- * Version: 1.05
+ * Version: 1.06
  * Author: guilamu
  * License: GPL v2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'GF_CHAINED_SELECT_ENHANCER_VERSION', '1.05' );
+define( 'GF_CHAINED_SELECT_ENHANCER_VERSION', '1.06' );
 define( 'GF_CHAINED_SELECT_ENHANCER_PATH', plugin_dir_path( __FILE__ ) );
 define( 'GF_CHAINED_SELECT_ENHANCER_URL', plugin_dir_url( __FILE__ ) );
 
@@ -80,16 +80,34 @@ function gf_chained_select_enhancer_enqueue_admin( $hook ) {
 }
 
 /**
- * Add the hide columns field setting UI to Gravity Forms editor
+ * Add all field settings at a single position with better structure
  */
-add_action( 'gform_field_standard_settings', 'gf_chained_select_enhancer_add_field_setting', 10, 2 );
-function gf_chained_select_enhancer_add_field_setting( $position, $form_id ) {
+add_action( 'gform_field_standard_settings', 'gf_chained_select_enhancer_add_all_settings', 10, 2 );
+function gf_chained_select_enhancer_add_all_settings( $position, $form_id ) {
+    // Add settings at position 1200 (after most standard settings)
     if ( intval( $position ) !== 1200 ) {
         return;
     }
 
     ?>
-    <li class="gf_chained_select_enhancers_hide_columns_setting field_setting" style="display:none;">
+    <!-- Auto-select setting -->
+    <li class="gf_chained_select_enhancer_setting gf_chained_select_enhancers_auto_select_setting field_setting" style="display:none;">
+        <label for="gf_chained_select_enhancers_auto_select">
+            <input type="checkbox" id="gf_chained_select_enhancers_auto_select" name="gf_chained_select_enhancers_auto_select" value="1" onchange="SetFieldProperty('gf_chained_select_enhancers_auto_select', this.checked);" />
+            <?php esc_html_e( 'Automatically select when only one option is available', 'gf-chained-select-enhancer' ); ?>
+        </label>
+    </li>
+
+    <!-- Full-width setting -->
+    <li class="gf_chained_select_enhancer_setting gf_chained_select_enhancers_full_width_setting field_setting" style="display:none;">
+        <label for="gf_chained_select_enhancers_full_width">
+            <input type="checkbox" id="gf_chained_select_enhancers_full_width" name="gf_chained_select_enhancers_full_width" value="1" onchange="SetFieldProperty('gf_chained_select_enhancers_full_width', this.checked);" />
+            <?php esc_html_e( 'Make vertical chained select full width', 'gf-chained-select-enhancer' ); ?>
+        </label>
+    </li>
+
+    <!-- Hide columns setting -->
+    <li class="gf_chained_select_enhancer_setting gf_chained_select_enhancers_hide_columns_setting field_setting" style="display:none;">
         <label for="gf_chained_select_enhancers_hide_columns">
             <?php esc_html_e( 'Hide Columns', 'gf-chained-select-enhancer' ); ?>
         </label>
@@ -105,73 +123,37 @@ function gf_chained_select_enhancer_add_field_setting( $position, $form_id ) {
 
     <script type="text/javascript">
         jQuery(document).ready(function($) {
-            // Show/hide the field setting based on field type
-            $(document).on('gform_load_field_settings', function() {
+            // Show/hide settings based on field type
+            function toggleChainedSelectSettings() {
                 var field = GetSelectedField();
+                
                 if ( field && field.type === 'chained_select' ) {
-                    $('.gf_chained_select_enhancers_hide_columns_setting').show();
-                    // Render toggles after a short delay to ensure field is loaded
+                    // Show all chained select enhancer settings
+                    $('.gf_chained_select_enhancer_setting').show();
+                    
+                    // Load values from field
+                    $('#gf_chained_select_enhancers_auto_select').prop('checked', field.gf_chained_select_enhancers_auto_select ? true : false);
+                    $('#gf_chained_select_enhancers_full_width').prop('checked', field.gf_chained_select_enhancers_full_width ? true : false);
+                    $('#gf_chained_select_enhancers_hide_columns').val(field.gf_chained_select_enhancers_hide_columns ? field.gf_chained_select_enhancers_hide_columns : '');
+                    
+                    // Render toggle switches for hide columns
                     setTimeout(function() {
                         GFChainedSelectEnhancer.renderToggleSwitches();
                     }, 100);
                 } else {
-                    $('.gf_chained_select_enhancers_hide_columns_setting').hide();
+                    // Hide all chained select enhancer settings
+                    $('.gf_chained_select_enhancer_setting').hide();
                 }
-            });
+            }
 
-            // Handle the auto-select and full-width settings (from original plugin)
-            $(document).on('gform_load_field_settings', function() {
-                var field = GetSelectedField();
-                if ( field && field.type === 'chained_select' ) {
-                    $('#gf_chained_select_enhancers_auto_select').prop('checked', field.gf_chained_select_enhancers_auto_select ? true : false);
-                    $('#gf_chained_select_enhancers_full_width').prop('checked', field.gf_chained_select_enhancers_full_width ? true : false);
-                    $('#gf_chained_select_enhancers_hide_columns').val(field.gf_chained_select_enhancers_hide_columns ? field.gf_chained_select_enhancers_hide_columns : '');
-                }
-            });
-        });
-    </script>
-    <?php
-}
+            // Trigger on field load
+            $(document).on('gform_load_field_settings', toggleChainedSelectSettings);
+            
+            // Also check when field type changes
+            $(document).on('change', '#field_type', toggleChainedSelectSettings);
 
-/**
- * Add other field settings (auto-select, full-width)
- * These are from the original plugin
- */
-add_action( 'gform_field_standard_settings', 'gf_chained_select_enhancer_add_other_settings', 10, 2 );
-function gf_chained_select_enhancer_add_other_settings( $position, $form_id ) {
-    if ( intval( $position ) !== 1200 ) {
-        return;
-    }
-
-    ?>
-    <!-- Auto-select setting -->
-    <li class="gf_chained_select_enhancers_auto_select_setting field_setting" style="display:none;">
-        <label for="gf_chained_select_enhancers_auto_select">
-            <input type="checkbox" id="gf_chained_select_enhancers_auto_select" name="gf_chained_select_enhancers_auto_select" value="1" onchange="SetFieldProperty('gf_chained_select_enhancers_auto_select', this.checked);" />
-            <?php esc_html_e( 'Automatically select when only one option is available', 'gf-chained-select-enhancer' ); ?>
-        </label>
-    </li>
-
-    <!-- Full-width setting -->
-    <li class="gf_chained_select_enhancers_full_width_setting field_setting" style="display:none;">
-        <label for="gf_chained_select_enhancers_full_width">
-            <input type="checkbox" id="gf_chained_select_enhancers_full_width" name="gf_chained_select_enhancers_full_width" value="1" onchange="SetFieldProperty('gf_chained_select_enhancers_full_width', this.checked);" />
-            <?php esc_html_e( 'Make vertical chained select full width', 'gf-chained-select-enhancer' ); ?>
-        </label>
-    </li>
-
-    <script type="text/javascript">
-        jQuery(document).ready(function($) {
-            $(document).on('gform_load_field_settings', function() {
-                var field = GetSelectedField();
-                if ( field && field.type === 'chained_select' ) {
-                    $('.gf_chained_select_enhancers_auto_select_setting').show();
-                    $('.gf_chained_select_enhancers_full_width_setting').show();
-                } else {
-                    $('.gf_chained_select_enhancers_auto_select_setting').hide();
-                    $('.gf_chained_select_enhancers_full_width_setting').hide();
-                }
-            });
+            // Initial check
+            toggleChainedSelectSettings();
         });
     </script>
     <?php
@@ -189,24 +171,24 @@ function gf_chained_select_enhancer_field_content( $content, $field, $value, $le
     // Add data attributes for frontend JavaScript
     if ( ! empty( $field['gf_chained_select_enhancers_hide_columns'] ) ) {
         $content = str_replace(
-            'class="gfield-choice-input gfield-choice-input_chained_select',
-            'data-gf-chained-select-hide-columns="' . esc_attr( $field['gf_chained_select_enhancers_hide_columns'] ) . '" class="gfield-choice-input gfield-choice-input_chained_select',
+            'class="gfield_list_container gfield-choice-input_chained_select',
+            'data-gf-chained-select-hide-columns="' . esc_attr( $field['gf_chained_select_enhancers_hide_columns'] ) . '" class="gfield_list_container gfield-choice-input_chained_select',
             $content
         );
     }
 
     if ( ! empty( $field['gf_chained_select_enhancers_auto_select'] ) ) {
         $content = str_replace(
-            'class="gfield-choice-input gfield-choice-input_chained_select',
-            'data-gf-chained-select-auto-select="1" class="gfield-choice-input gfield-choice-input_chained_select',
+            'class="gfield_list_container gfield-choice-input_chained_select',
+            'data-gf-chained-select-auto-select="1" class="gfield_list_container gfield-choice-input_chained_select',
             $content
         );
     }
 
     if ( ! empty( $field['gf_chained_select_enhancers_full_width'] ) ) {
         $content = str_replace(
-            'class="gfield-choice-input gfield-choice-input_chained_select',
-            'data-gf-chained-select-full-width="1" class="gfield-choice-input gfield-choice-input_chained_select',
+            'class="gfield_list_container gfield-choice-input_chained_select',
+            'data-gf-chained-select-full-width="1" class="gfield_list_container gfield-choice-input_chained_select',
             $content
         );
     }

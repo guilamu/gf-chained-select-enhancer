@@ -77,5 +77,5 @@ A million thanks to the wizards from [GravityWiz](https://gravitywiz.com/) (Davi
   * Major column hiding enhancement
  
 * 2025-11-06 -- 1.2
- * New feature: "CSV Export"
+  * New feature: "CSV Export"
 

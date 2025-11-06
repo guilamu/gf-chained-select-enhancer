@@ -33,5 +33,22 @@ msgid "Hidden"
 msgstr ""
 
 #: gf-chained-select-enhancer.php
+msgid "Export Choices"
+msgstr ""
+
+#: gf-chained-select-enhancer.php
+msgid "Exporting..."
+msgstr ""
+
+#: gf-chained-select-enhancer.php
+msgid "Export complete"
+msgstr ""
+
+#: gf-chained-select-enhancer.php
+msgid "Please select a chained select field first"
+msgstr ""
+
+
+#: gf-chained-select-enhancer.php
 msgid "Visible"
 msgstr ""

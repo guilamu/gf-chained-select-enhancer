@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: https://github.com/guilamu/gf-chained-select-enhancer\n"
 "POT-Creation-Date: 2024-11-05 17:15+0000\n"
-"PO-Revision-Date: 2025-11-05 18:19+0100\n"
+"PO-Revision-Date: 2025-11-06 09:42+0100\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: fr\n"
@@ -36,3 +36,19 @@ msgstr "Masqué"
 #: gf-chained-select-enhancer.php
 msgid "Visible"
 msgstr "Visible"
+
+#: gf-chained-select-enhancer.php
+msgid "Export Choices"
+msgstr "Exporter les choix"
+
+#: gf-chained-select-enhancer.php
+msgid "Exporting..."
+msgstr "Export en cours..."
+
+#: gf-chained-select-enhancer.php
+msgid "Export complete"
+msgstr "Export terminé"
+
+#: gf-chained-select-enhancer.php
+msgid "Please select a chained select field first"
+msgstr "Veuillez d'abord sélectionner un champ de sélection chaînée"

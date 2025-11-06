@@ -2,8 +2,8 @@
 /**
  * Plugin Name: Chained Select Enhancer for Gravity Forms
  * Plugin URI: https://github.com/guilamu/gf-chained-select-enhancer
- * Description: Enhances Gravity Forms Chained Selects with auto-select functionality and column hiding options.
- * Version: 1.10
+ * Description: Enhances Gravity Forms Chained Selects with auto-select functionality, column hiding options, and CSV export.
+ * Version: 1.2
  * Author: Guilamu
  * Author URI: guilamu@gmail.com
  * Text Domain: gf-chained-select-enhancer
@@ -27,6 +27,7 @@ class GF_Auto_Select_Chained_Selects {
         add_action('plugins_loaded', array($this, 'load_plugin_textdomain'));
         add_action('wp_head', array($this, 'output_hide_columns_css'));
         add_action('admin_head', array($this, 'add_toggle_switch_styles'));
+        add_action('wp_ajax_gfcs_export_field_csv', array($this, 'handle_ajax_export'));
     }
 
     /**
@@ -43,95 +44,107 @@ class GF_Auto_Select_Chained_Selects {
         $screen = get_current_screen();
         if ($screen && strpos($screen->id, 'gf_edit_forms') !== false) {
             ?>
-            <style type="text/css">
-                .hide_columns_setting .gfcs-toggle-switches {
-                    margin-top: 10px;
-                    clear: both;
-                }
-                .hide_columns_setting .gfcs-toggle-item {
-                    display: flex !important;
-                    align-items: center;
-                    margin-bottom: 8px;
-                    padding: 6px 0;
-                    width: 100%;
-                }
-                .hide_columns_setting .gfcs-toggle-switch {
-                    position: relative;
-                    display: inline-block !important;
-                    width: 44px !important;
-                    height: 24px !important;
-                    margin-right: 10px;
-                    flex-shrink: 0;
-                    vertical-align: middle;
-                }
-                .hide_columns_setting .gfcs-toggle-switch input[type="checkbox"] {
-                    opacity: 0 !important;
-                    width: 0 !important;
-                    height: 0 !important;
-                    position: absolute !important;
-                    margin: 0 !important;
-                    padding: 0 !important;
-                }
-                .hide_columns_setting .gfcs-toggle-slider {
-                    position: absolute;
-                    cursor: pointer;
-                    top: 0;
-                    left: 0;
-                    right: 0;
-                    bottom: 0;
-                    background-color: #22a753;
-                    transition: .3s;
-                    border-radius: 24px;
-                    width: 44px;
-                    height: 24px;
-                }
-                .hide_columns_setting .gfcs-toggle-slider:before {
-                    position: absolute;
-                    content: "";
-                    height: 18px;
-                    width: 18px;
-                    left: 23px;
-                    bottom: 3px;
-                    background-color: white;
-                    transition: .3s;
-                    border-radius: 50%;
-                }
-                .hide_columns_setting .gfcs-toggle-switch input[type="checkbox"]:checked + .gfcs-toggle-slider {
-                    background-color: #ccc;
-                }
-                .hide_columns_setting .gfcs-toggle-switch input[type="checkbox"]:focus + .gfcs-toggle-slider {
-                    box-shadow: 0 0 1px #22a753;
-                }
-                .hide_columns_setting .gfcs-toggle-switch input[type="checkbox"]:checked + .gfcs-toggle-slider:before {
-                    transform: translateX(-20px);
-                }
-                .hide_columns_setting .gfcs-toggle-label {
-                    font-size: 13px;
-                    color: #333;
-                    cursor: pointer;
-                    user-select: none;
-                    flex: 1;
-                    line-height: 24px;
-                }
-                .hide_columns_setting .gfcs-no-columns {
-                    color: #666;
-                    font-style: italic;
-                    padding: 8px 0;
-                }
-                .hide_columns_setting .gfcs-help-text {
-                    color: #666;
-                    font-size: 12px;
-                    margin-top: 5px;
-                    margin-bottom: 8px;
-                    font-style: italic;
-                }
-            </style>
+        <style type="text/css">
+            .hide_columns_setting .gfcs-toggle-switches {
+                margin-top: 10px;
+                clear: both;
+            }
+            .hide_columns_setting .gfcs-toggle-item {
+                display: flex !important;
+                align-items: center;
+                margin-bottom: 8px;
+                padding: 6px 0;
+                width: 100%;
+            }
+            .hide_columns_setting .gfcs-toggle-switch {
+                position: relative;
+                display: inline-block !important;
+                width: 44px !important;
+                height: 24px !important;
+                margin-right: 10px;
+                flex-shrink: 0;
+                vertical-align: middle;
+            }
+            .hide_columns_setting .gfcs-toggle-switch input[type="checkbox"] {
+                opacity: 0 !important;
+                width: 0 !important;
+                height: 0 !important;
+                position: absolute !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            .hide_columns_setting .gfcs-toggle-slider {
+                position: absolute;
+                cursor: pointer;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: #22a753;
+                transition: .3s;
+                border-radius: 24px;
+            }
+            .hide_columns_setting .gfcs-toggle-slider:before {
+                position: absolute;
+                content: "";
+                height: 18px;
+                width: 18px;
+                left: 3px;
+                bottom: 3px;
+                background-color: white;
+                transition: .3s;
+                border-radius: 50%;
+            }
+            .hide_columns_setting .gfcs-toggle-switch input[type="checkbox"]:checked + .gfcs-toggle-slider {
+                background-color: #dc3232;
+            }
+            .hide_columns_setting .gfcs-toggle-switch input[type="checkbox"]:checked + .gfcs-toggle-slider:before {
+                transform: translateX(20px);
+            }
+            .hide_columns_setting .gfcs-toggle-label {
+                font-size: 13px;
+                color: #444;
+                font-weight: normal;
+                user-select: none;
+                flex: 1;
+            }
+            .hide_columns_setting .gfcs-toggle-status {
+                display: inline-block !important;
+                visibility: visible !important;
+                font-size: 11px;
+                color: #666;
+                margin-left: auto;
+                padding-left: 10px;
+                font-weight: 600;
+                min-width: 60px;
+                text-align: right;
+            }
+            .hide_columns_setting .gfcs-toggle-status.gfcs-hidden {
+                display: inline-block !important;
+                visibility: visible !important;
+                color: #dc3232 !important;
+            }
+            .hide_columns_setting .gfcs-toggle-status.gfcs-visible {
+                display: inline-block !important;
+                visibility: visible !important;
+                color: #22a753 !important;
+            }
+            .csv_export_setting {
+                margin-top: 15px;
+                padding-top: 15px;
+                border-top: 1px solid #ddd;
+            }
+            #gfcs_export_status {
+                color: #22a753;
+                font-size: 12px;
+            }
+        </style>
             <?php
         }
     }
 
     /**
-     * Add auto-select, hide columns, and full width options to Gravity Forms field settings
+     * Add custom field settings for chained select fields in the form editor
      */
     public function add_auto_select_option($position, $form_id) {
         if ($position == 25) {
@@ -155,6 +168,12 @@ class GF_Auto_Select_Chained_Selects {
                 <div id="gfcs_column_toggles" class="gfcs-toggle-switches"></div>
                 <input type="hidden" id="field_hide_columns" onchange="SetFieldProperty('hideColumns', this.value);" />
             </li>
+           <li class="csv_export_setting field_setting">
+               <button type="button" id="gfcs_export_csv_btn" class="button button-large" style="width: 100%; text-align: center;" onclick="gfcsExportCurrentField(event);">
+                   <?php esc_html_e('Export Choices', 'gf-chained-select-enhancer'); ?>
+               </button>
+               <span id="gfcs_export_status" style="display: block; text-align: center; margin-top: 5px;"></span>
+           </li>
             <?php
         }
     }
@@ -172,7 +191,7 @@ class GF_Auto_Select_Chained_Selects {
             };
 
             // Add new field settings to chained select fields
-            fieldSettings.chainedselect += ', .auto_select_setting, .hide_columns_setting, .full_width_setting';
+            fieldSettings.chainedselect += ', .auto_select_setting, .hide_columns_setting, .full_width_setting, .csv_export_setting';
             
             // Function to count columns in chained select
             function gfcsCountColumns(field) {
@@ -196,181 +215,350 @@ class GF_Auto_Select_Chained_Selects {
 
             // Function to render toggle switches
             function gfcsRenderColumnToggles(field) {
-                var container = jQuery('#gfcs_column_toggles');
-                container.empty();
+                var container = document.getElementById('gfcs_column_toggles');
+                if (!container) return;
+                
+                container.innerHTML = '';
                 
                 var columnCount = gfcsCountColumns(field);
-                
                 if (columnCount === 0) {
-                    container.html('<div class="gfcs-no-columns">' + 
-                        <?php echo json_encode(__('No columns detected. Add choices to see column toggles.', 'gf-chained-select-enhancer')); ?> + 
-                        '</div>');
+                    container.innerHTML = '<p style="color: #666; font-style: italic;">No columns found</p>';
                     return;
                 }
-
-                var columnLabels = gfcsGetColumnLabels(field);
-                var hiddenColumns = gfcsGetHiddenColumns();
-
-                for (var i = 1; i <= columnCount; i++) {
-                    var columnLabel = columnLabels[i - 1] || ('Column ' + i);
-                    var isHidden = hiddenColumns.indexOf(i) !== -1;
+                
+                var labels = gfcsGetColumnLabels(field);
+                var hideColumns = field.hideColumns || '';
+                var hiddenIndices = hideColumns ? hideColumns.split(',').map(function(i) { return parseInt(i); }) : [];
+                
+                for (var i = 0; i < columnCount; i++) {
+                    var isHidden = hiddenIndices.indexOf(i) !== -1;
                     
-                    var toggleHtml = 
-                        '<div class="gfcs-toggle-item">' +
-                            '<label class="gfcs-toggle-switch">' +
-                                '<input type="checkbox" ' +
-                                    'data-column="' + i + '" ' +
-                                    'onchange="gfcsToggleColumn(this)" ' +
-                                    (isHidden ? 'checked' : '') + '>' +
-                                '<span class="gfcs-toggle-slider"></span>' +
-                            '</label>' +
-                            '<span class="gfcs-toggle-label" onclick="gfcsToggleLabelClick(this)">' +
-                                columnLabel + ' <span style="color: #999; font-size: 11px;">(' + 
-                                (isHidden ? gfcsLabels.hidden : gfcsLabels.visible) + ')</span>' +
-                            '</span>' +
-                        '</div>';
+                    var itemDiv = document.createElement('div');
+                    itemDiv.className = 'gfcs-toggle-item';
                     
-                    container.append(toggleHtml);
+                    var toggleLabel = document.createElement('label');
+                    toggleLabel.className = 'gfcs-toggle-switch';
+                    
+                    var checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.checked = isHidden;
+                    checkbox.setAttribute('data-column-index', i);
+                    checkbox.onchange = function() {
+                        gfcsUpdateHideColumns();
+                    };
+                    
+                    var slider = document.createElement('span');
+                    slider.className = 'gfcs-toggle-slider';
+                    
+                    toggleLabel.appendChild(checkbox);
+                    toggleLabel.appendChild(slider);
+                    
+                    var labelText = document.createElement('span');
+                    labelText.className = 'gfcs-toggle-label';
+                    labelText.textContent = labels[i];
+                    
+                    var status = document.createElement('span');
+                    status.className = 'gfcs-toggle-status ' + (isHidden ? 'hidden' : 'visible');
+                    status.textContent = isHidden ? gfcsLabels.hidden : gfcsLabels.visible;
+                    
+                    checkbox.onchange = function() {
+                        var isChecked = this.checked;
+                        var statusEl = this.parentElement.parentElement.querySelector('.gfcs-toggle-status');
+                        if (statusEl) {
+                            statusEl.textContent = isChecked ? gfcsLabels.hidden : gfcsLabels.visible;
+                            statusEl.className = 'gfcs-toggle-status ' + (isChecked ? 'hidden' : 'visible');
+                        }
+                        gfcsUpdateHideColumns();
+                    };
+                    
+                    itemDiv.appendChild(toggleLabel);
+                    itemDiv.appendChild(labelText);
+                    itemDiv.appendChild(status);
+                    
+                    container.appendChild(itemDiv);
                 }
             }
 
-            // Function to get hidden columns from field property
-            function gfcsGetHiddenColumns() {
-                var hideColumnsValue = jQuery('#field_hide_columns').val();
-                if (!hideColumnsValue) {
-                    return [];
-                }
-                return hideColumnsValue.split(',').map(function(col) {
-                    return parseInt(col.trim());
-                }).filter(function(col) {
-                    return !isNaN(col);
-                });
-            }
-
-            // Function to update hidden columns field
-            function gfcsUpdateHiddenColumns() {
-                var hiddenColumns = [];
-                jQuery('#gfcs_column_toggles input[type="checkbox"]:checked').each(function() {
-                    hiddenColumns.push(jQuery(this).data('column'));
+            // Function to update hideColumns field property
+            function gfcsUpdateHideColumns() {
+                var checkboxes = document.querySelectorAll('#gfcs_column_toggles input[type="checkbox"]');
+                var hiddenIndices = [];
+                
+                checkboxes.forEach(function(checkbox) {
+                    if (checkbox.checked) {
+                        var index = parseInt(checkbox.getAttribute('data-column-index'));
+                        hiddenIndices.push(index);
+                    }
                 });
                 
-                var hideColumnsValue = hiddenColumns.join(',');
-                jQuery('#field_hide_columns').val(hideColumnsValue).trigger('change');
+                var hideColumnsValue = hiddenIndices.join(',');
+                document.getElementById('field_hide_columns').value = hideColumnsValue;
+                SetFieldProperty('hideColumns', hideColumnsValue);
             }
 
-            // Toggle column visibility
-            window.gfcsToggleColumn = function(checkbox) {
-                gfcsUpdateHiddenColumns();
-            };
-
-            // Toggle when clicking label
-            window.gfcsToggleLabelClick = function(label) {
-                var checkbox = jQuery(label).siblings('.gfcs-toggle-switch').find('input[type="checkbox"]');
-                checkbox.prop('checked', !checkbox.prop('checked'));
-                gfcsUpdateHiddenColumns();
-            };
-
-            // Set field properties when loading field settings
+            // Bind to the load field settings event
             jQuery(document).on('gform_load_field_settings', function(event, field, form) {
-                jQuery('#field_auto_select').prop('checked', field.autoSelectOnly == true);
-                jQuery('#field_hide_columns').val(field.hideColumns || '');
-                jQuery('#field_full_width').prop('checked', field.fullWidth == true);
-                
-                // Render column toggles for chained select fields
-                if (field.type === 'chainedselect') {
+                if (field.type === 'chainedselect' || field.type === 'chained_select') {
+                    jQuery('#field_auto_select').prop('checked', field.autoSelectOnly == true);
+                    jQuery('#field_full_width').prop('checked', field.fullWidth == true);
+                    jQuery('#field_hide_columns').val(field.hideColumns || '');
                     gfcsRenderColumnToggles(field);
                 }
             });
 
-            // Re-render toggles when field is updated (e.g., when choices are modified)
-            jQuery(document).on('gform_field_updated', function(event, field, form) {
-                if (field.type === 'chainedselect') {
-                    gfcsRenderColumnToggles(field);
+            // Export current field to CSV
+            function gfcsExportCurrentField(event) {
+                event.preventDefault();
+                var field = GetSelectedField();
+                if (!field) {
+                    alert('<?php esc_html_e("Please select a chained select field first", "gf-chained-select-enhancer"); ?>');
+                    return;
                 }
-            });
+                
+                var formId = form.id;
+                var fieldId = field.id;
+                var statusEl = document.getElementById('gfcs_export_status');
+                
+                statusEl.innerHTML = '<?php esc_html_e("Exporting...", "gf-chained-select-enhancer"); ?>';
+                
+                // Create form and submit
+                var exportForm = document.createElement('form');
+                exportForm.method = 'POST';
+                exportForm.action = ajaxurl;
+                exportForm.target = '_blank';
+                
+                var actionField = document.createElement('input');
+                actionField.type = 'hidden';
+                actionField.name = 'action';
+                actionField.value = 'gfcs_export_field_csv';
+                exportForm.appendChild(actionField);
+                
+                var formIdField = document.createElement('input');
+                formIdField.type = 'hidden';
+                formIdField.name = 'form_id';
+                formIdField.value = formId;
+                exportForm.appendChild(formIdField);
+                
+                var fieldIdField = document.createElement('input');
+                fieldIdField.type = 'hidden';
+                fieldIdField.name = 'field_id';
+                fieldIdField.value = fieldId;
+                exportForm.appendChild(fieldIdField);
+                
+                var nonceField = document.createElement('input');
+                nonceField.type = 'hidden';
+                nonceField.name = 'nonce';
+                nonceField.value = '<?php echo wp_create_nonce("gfcs_export_csv"); ?>';
+                exportForm.appendChild(nonceField);
+                
+                document.body.appendChild(exportForm);
+                exportForm.submit();
+                document.body.removeChild(exportForm);
+                
+                setTimeout(function() {
+                    statusEl.innerHTML = '✓ <?php esc_html_e("Export complete", "gf-chained-select-enhancer"); ?>';
+                    setTimeout(function() { statusEl.innerHTML = ''; }, 3000);
+                }, 1000);
+            }
         </script>
         <?php
     }
 
     /**
-     * Add auto-select property to the field HTML
+     * Add data attribute to field for auto-select functionality
      */
-    public function add_auto_select_property($content, $field, $value, $lead_id, $form_id) {
-        if ($field->type == 'chainedselect' && $field->autoSelectOnly) {
-            $content .= '<input type="hidden" class="gfield_chainedselect_auto_select" value="1" />';
+    public function add_auto_select_property($field_content, $field, $value, $lead_id, $form_id) {
+        if (($field->type === 'chainedselect' || $field->type === 'chained_select') && !empty($field->autoSelectOnly)) {
+            $field_content = str_replace('<select', '<select data-auto-select-only="true"', $field_content);
         }
-        return $content;
+        
+        if (($field->type === 'chainedselect' || $field->type === 'chained_select') && !empty($field->fullWidth)) {
+            $field_content = str_replace('class="ginput_container', 'class="ginput_container gfcs-full-width', $field_content);
+        }
+        
+        return $field_content;
     }
 
     /**
-     * Auto-select the only choice if enabled
+     * Auto-select when only one choice is available
      */
-    public function auto_select_only_choice($choices, $form_id, $field) {
-        if ($field->autoSelectOnly) {
-            $choices = $this->gfcs_auto_select_only_choice($choices);
+    public function auto_select_only_choice($choices, $field, $form) {
+        if (empty($field->autoSelectOnly)) {
+            return $choices;
         }
-        return $choices;
-    }
-
-    /**
-     * Recursive function to auto-select the only choice in nested choices
-     */
-    private function gfcs_auto_select_only_choice($choices) {
-        if (count($choices) == 1) {
+        
+        if (is_array($choices) && count($choices) == 1) {
             $choices[0]['isSelected'] = true;
         }
-
-        foreach ($choices as &$choice) {
-            if (!empty($choice['choices'])) {
-                $choice['choices'] = $this->gfcs_auto_select_only_choice($choice['choices']);
-            }
-        }
-
+        
         return $choices;
     }
 
     /**
-     * Output CSS to hide specified columns and apply full width
+     * Output custom CSS to hide specified columns
      */
     public function output_hide_columns_css() {
+        if (!class_exists('GFAPI')) {
+            return;
+        }
+        
         $forms = GFAPI::get_forms();
-        $css = '';
-        $fullWidthCssNeeded = false;
-
+        $css_rules = array();
+        
         foreach ($forms as $form) {
             foreach ($form['fields'] as $field) {
-                if ($field->type == 'chainedselect') {
-                    if (!empty($field->hideColumns)) {
-                        $columns = explode(',', $field->hideColumns);
-                        foreach ($columns as $column) {
-                            $column = trim($column);
-                            if (is_numeric($column)) {
-                                    $css .= "#input_{$form['id']}_{$field->id}_{$column}_container { 
-                                    display: none !important;
-                                    height: 0 !important;
-                                    margin: 0 !important;
-                                    padding: 0 !important;
-                                    overflow: hidden !important;
-                                }\n";
-                            }
-                        }
+                if (($field->type === 'chainedselect' || $field->type === 'chained_select') && !empty($field->hideColumns)) {
+                    $hidden_indices = explode(',', $field->hideColumns);
+                    foreach ($hidden_indices as $index) {
+                        $index = intval(trim($index));
+                        $input_id = $field->id . '.' . ($index + 1);
+                        $css_rules[] = sprintf(
+                            '#field_%d_%s { display: none !important; }',
+                            $form['id'],
+                            str_replace('.', '_', $input_id)
+                        );
                     }
-                    if (!empty($field->fullWidth)) {
-                        $fullWidthCssNeeded = true;
-                    }
+                }
+                
+                if (($field->type === 'chainedselect' || $field->type === 'chained_select') && !empty($field->fullWidth)) {
+                    $css_rules[] = sprintf(
+                        '#field_%d_%d.gfcs-full-width .gfield_list_cell, #field_%d_%d.gfcs-full-width select { width: 100%% !important; min-width: 100%% !important; }',
+                        $form['id'],
+                        $field->id,
+                        $form['id'],
+                        $field->id
+                    );
                 }
             }
         }
-
-        if ($fullWidthCssNeeded) {
-            $css .= ".gfield_chainedselect.vertical select { width: 100% !important; }\n";
+        
+        if (!empty($css_rules)) {
+            echo '<style type="text/css">' . implode(' ', $css_rules) . '</style>';
         }
+    }
 
-        if (!empty($css)) {
-            echo "<style type='text/css'>\n{$css}</style>\n";
+    /**
+     * Handle AJAX export request
+     */
+    public function handle_ajax_export() {
+        if (!current_user_can('manage_options')) {
+            wp_die('Access denied');
         }
+        
+        if (!isset($_POST['nonce']) || !wp_verify_nonce($_POST['nonce'], 'gfcs_export_csv')) {
+            wp_die('Nonce verification failed');
+        }
+        
+        $form_id = absint($_POST['form_id']);
+        $field_id = absint($_POST['field_id']);
+        
+        $export = $this->export_field_to_csv($form_id, $field_id);
+        
+        if ($export) {
+            wp_redirect($export['url']);
+            exit;
+        } else {
+            wp_die('Export failed');
+        }
+    }
+
+    /**
+     * Generate all possible combinations (Cartesian product)
+     */
+    private function generate_combinations($choices, $current_path, &$rows) {
+        if (!is_array($choices) || empty($choices)) {
+            return;
+        }
+        
+        foreach ($choices as $choice) {
+            $text = isset($choice['text']) ? $choice['text'] : '';
+            $new_path = array_merge($current_path, array($text));
+            $sub_choices = isset($choice['choices']) ? $choice['choices'] : array();
+            
+            if (!empty($sub_choices) && is_array($sub_choices)) {
+                $this->generate_combinations($sub_choices, $new_path, $rows);
+            } else {
+                $rows[] = $new_path;
+            }
+        }
+    }
+
+    /**
+     * Export field data to CSV
+     */
+    private function export_field_to_csv($form_id, $field_id) {
+        if (!class_exists('GFAPI')) {
+            return false;
+        }
+        
+        $form = GFAPI::get_form($form_id);
+        if (!$form) {
+            return false;
+        }
+        
+        $field = null;
+        foreach ($form['fields'] as $f) {
+            if ($f->id == $field_id && ($f->type === 'chainedselect' || $f->type === 'chained_select')) {
+                $field = $f;
+                break;
+            }
+        }
+        
+        if (!$field) {
+            return false;
+        }
+        
+        $csv_content = array();
+        
+        // Headers from input labels
+        $headers = array();
+        if (isset($field->inputs) && is_array($field->inputs)) {
+            foreach ($field->inputs as $input) {
+                $headers[] = $input['label'];
+            }
+        }
+        
+        if (!empty($headers)) {
+            $csv_content[] = $headers;
+        }
+        
+        // Generate combinations
+        $choices = isset($field->choices) ? $field->choices : array();
+        $rows = array();
+        $this->generate_combinations($choices, array(), $rows);
+        
+        foreach ($rows as $row) {
+            $csv_content[] = $row;
+        }
+        
+        // Generate CSV file
+        $filename = 'chained_select_form_' . $form_id . '_field_' . $field_id . '_' . date('Y-m-d_His') . '.csv';
+        $upload_dir = wp_upload_dir();
+        
+        if (!is_array($upload_dir) || empty($upload_dir['path'])) {
+            return false;
+        }
+        
+        $filepath = $upload_dir['path'] . '/' . $filename;
+        $handle = fopen($filepath, 'w');
+        
+        if (!$handle) {
+            return false;
+        }
+        
+        foreach ($csv_content as $row) {
+            fputcsv($handle, $row);
+        }
+        
+        fclose($handle);
+        
+        return array(
+            'filename' => $filename,
+            'url' => $upload_dir['url'] . '/' . $filename,
+            'path' => $filepath
+        );
     }
 }
 
-// Instantiate the plugin class
+// Initialize the plugin
 new GF_Auto_Select_Chained_Selects();

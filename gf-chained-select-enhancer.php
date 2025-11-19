@@ -372,18 +372,14 @@ class GF_Auto_Select_Chained_Selects {
             $field_content = str_replace('<select', '<select data-auto-select-only="true"', $field_content);
         }
         
-        if (($field->type === 'chainedselect' || $field->type === 'chained_select') && !empty($field->fullWidth)) {
-            $field_content = str_replace('class="ginput_container', 'class="ginput_container gfcs-full-width', $field_content);
-        }
-        
         return $field_content;
     }
 
     /**
      * Auto-select when only one choice is available
      */
-    public function auto_select_only_choice($choices, $field, $form) {
-        if (empty($field->autoSelectOnly)) {
+    public function auto_select_only_choice($choices, $form, $field) {
+        if (!is_object($field) || empty($field->autoSelectOnly)) {
             return $choices;
         }
         
@@ -395,7 +391,7 @@ class GF_Auto_Select_Chained_Selects {
     }
 
     /**
-     * Output custom CSS to hide specified columns
+     * Output custom CSS to hide specified columns and set full width
      */
     public function output_hide_columns_css() {
         if (!class_exists('GFAPI')) {
@@ -406,25 +402,36 @@ class GF_Auto_Select_Chained_Selects {
         $css_rules = array();
         
         foreach ($forms as $form) {
+            if (!isset($form['fields']) || !is_array($form['fields'])) {
+                continue;
+            }
+
             foreach ($form['fields'] as $field) {
-                if (($field->type === 'chainedselect' || $field->type === 'chained_select') && !empty($field->hideColumns)) {
+                if ($field->type !== 'chainedselect' && $field->type !== 'chained_select') {
+                    continue;
+                }
+
+                // Handle Hide Columns
+                if (!empty($field->hideColumns)) {
                     $hidden_indices = explode(',', $field->hideColumns);
                     foreach ($hidden_indices as $index) {
                         $index = intval(trim($index));
-                        $input_id = $field->id . '.' . ($index + 1);
+                        $col_idx = $index + 1;
+                        
+                        // Target the container to hide label + input
                         $css_rules[] = sprintf(
-                            '#field_%d_%s { display: none !important; }',
+                            '#input_%d_%d_%d_container { display: none !important; }',
                             $form['id'],
-                            str_replace('.', '_', $input_id)
+                            $field->id,
+                            $col_idx
                         );
                     }
                 }
                 
-                if (($field->type === 'chainedselect' || $field->type === 'chained_select') && !empty($field->fullWidth)) {
+                // Handle Full Width
+                if (!empty($field->fullWidth)) {
                     $css_rules[] = sprintf(
-                        '#field_%d_%d.gfcs-full-width .gfield_list_cell, #field_%d_%d.gfcs-full-width select { width: 100%% !important; min-width: 100%% !important; }',
-                        $form['id'],
-                        $field->id,
+                        '#field_%d_%d select { width: 100%% !important; min-width: 100%% !important; }',
                         $form['id'],
                         $field->id
                     );

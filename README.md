@@ -60,7 +60,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
-This project is licensed under the GPL v2 or later.
+This project is licensed under the GNU AGPL.
 
 ## Acknowledgements
 

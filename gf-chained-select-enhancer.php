@@ -3,16 +3,168 @@
  * Plugin Name: Chained Select Enhancer for Gravity Forms
  * Plugin URI: https://github.com/guilamu/gf-chained-select-enhancer
  * Description: Enhances Gravity Forms Chained Selects with auto-select functionality, column hiding options, and CSV export.
- * Version: 1.2
+ * Version: 1.3
  * Author: Guilamu
  * Author URI: guilamu@gmail.com
  * Text Domain: gf-chained-select-enhancer
+ * Update URI: https://github.com/guilamu/gf-chained-select-enhancer
  */
 
 // Exit if accessed directly
 if (!defined('ABSPATH')) {
     exit;
 }
+
+
+// ============================================================================
+// AUTO-UPDATE FUNCTIONALITY - Check for updates from GitHub
+// ============================================================================
+
+add_filter('update_plugins_github.com', 'gfcs_check_for_updates', 10, 4);
+
+/**
+ * Check for updates from GitHub
+ */
+function gfcs_check_for_updates($update, array $plugin_data, string $plugin_file, $locales) {
+    // Only check this specific plugin
+    if ('gf-chained-select-enhancer/gf-chained-select-enhancer.php' !== $plugin_file) {
+        return $update;
+    }
+
+    // Skip if update already found
+    if (!empty($update)) {
+        return $update;
+    }
+
+    // Fetch latest release from GitHub API
+    $response = wp_remote_get(
+        'https://api.github.com/repos/guilamu/gf-chained-select-enhancer/releases/latest',
+        array(
+            'user-agent' => 'guilamu',
+        )
+    );
+
+    if (is_wp_error($response)) {
+        return $update;
+    }
+
+    $release_data = json_decode(wp_remote_retrieve_body($response), true);
+
+    if (empty($release_data)) {
+        return $update;
+    }
+
+    $new_version = ltrim($release_data['tag_name'], 'v'); // Remove 'v' prefix if exists
+
+    // Compare versions
+    if (!version_compare($plugin_data['Version'], $new_version, '<')) {
+        return false;
+    }
+
+    // Return update data with proper plugin reference
+    $update = array(
+        'slug'        => 'gf-chained-select-enhancer',
+        'plugin'      => $plugin_file,
+        'version'     => $new_version,
+        'url'         => $release_data['html_url'],
+        'package'     => !empty($release_data['assets'][0]['browser_download_url']) 
+                         ? $release_data['assets'][0]['browser_download_url'] 
+                         : $release_data['zipball_url'], // Fallback to zipball
+        'tested'      => '6.9',
+        'requires_php' => '7.0',
+    );
+
+    // Add filter to fix folder name during installation
+    add_filter('upgrader_source_selection', 'gfcs_fix_plugin_folder_name', 10, 4);
+
+    return $update;
+}
+
+/**
+ * Fix the plugin folder name after download from GitHub
+ */
+function gfcs_fix_plugin_folder_name($source, $remote_source, $upgrader, $extra = array()) {
+    global $wp_filesystem;
+
+    // Only run for our plugin
+    if (!isset($extra['plugin']) || $extra['plugin'] !== 'gf-chained-select-enhancer/gf-chained-select-enhancer.php') {
+        return $source;
+    }
+
+    // Get the correct folder name
+    $correct_folder_name = 'gf-chained-select-enhancer';
+    $new_source = trailingslashit(dirname($source)) . $correct_folder_name . '/';
+
+    // Rename if needed
+    if ($source !== $new_source) {
+        if ($wp_filesystem->move($source, $new_source)) {
+            return $new_source;
+        }
+    }
+
+    return $source;
+}
+
+add_filter('plugins_api', 'gfcs_plugin_information', 10, 3);
+
+/**
+ * Provide plugin information for the "View details" modal
+ */
+function gfcs_plugin_information($result, $action, $args) {
+    // Only handle plugin_information requests for our plugin
+    if ($action !== 'plugin_information') {
+        return $result;
+    }
+
+    if (!isset($args->slug) || $args->slug !== 'gf-chained-select-enhancer') {
+        return $result;
+    }
+
+    // Fetch latest release from GitHub
+    $response = wp_remote_get(
+        'https://api.github.com/repos/guilamu/gf-chained-select-enhancer/releases/latest',
+        array(
+            'user-agent' => 'guilamu',
+        )
+    );
+
+    if (is_wp_error($response)) {
+        return $result;
+    }
+
+    $release_data = json_decode(wp_remote_retrieve_body($response), true);
+
+    if (empty($release_data)) {
+        return $result;
+    }
+
+    $version = ltrim($release_data['tag_name'], 'v');
+
+    // Return plugin information object
+    $plugin_info = new stdClass();
+    $plugin_info->name         = 'Chained Select Enhancer for Gravity Forms';
+    $plugin_info->slug         = 'gf-chained-select-enhancer';
+    $plugin_info->version      = $version;
+    $plugin_info->author       = '<a href="https://github.com/guilamu">Guilamu</a>';
+    $plugin_info->homepage     = 'https://github.com/guilamu/gf-chained-select-enhancer';
+    $plugin_info->download_link = $release_data['zipball_url'];
+    $plugin_info->requires     = '5.0';
+    $plugin_info->tested       = '6.9';
+    $plugin_info->requires_php = '7.0';
+    $plugin_info->last_updated = $release_data['published_at'];
+
+    // Add sections (description, changelog, etc.)
+    $plugin_info->sections = array(
+        'description' => 'Enhances Gravity Forms Chained Selects with auto-select functionality, column hiding options, and CSV export.',
+        'changelog'   => '<h4>' . esc_html($version) . '</h4><p>' . esc_html($release_data['body']) . '</p>',
+    );
+
+    return $plugin_info;
+}
+
+// ============================================================================
+// END AUTO-UPDATE FUNCTIONALITY
+// ============================================================================
 
 class GF_Auto_Select_Chained_Selects {
 

@@ -63,14 +63,14 @@ function gfcs_check_for_updates($update, array $plugin_data, string $plugin_file
 
     // Return update data with proper plugin reference
     $update = array(
-        'slug'        => 'gf-chained-select-enhancer',
-        'plugin'      => $plugin_file,
-        'version'     => $new_version,
-        'url'         => $release_data['html_url'],
-        'package'     => !empty($release_data['assets'][0]['browser_download_url']) 
-                         ? $release_data['assets'][0]['browser_download_url'] 
-                         : $release_data['zipball_url'], // Fallback to zipball
-        'tested'      => '6.9',
+        'slug'         => 'gf-chained-select-enhancer',
+        'plugin'       => $plugin_file,
+        'version'      => $new_version,
+        'url'          => $release_data['html_url'],
+        'package'      => !empty($release_data['assets'][0]['browser_download_url']) 
+                          ? $release_data['assets'][0]['browser_download_url'] 
+                          : $release_data['zipball_url'], // Fallback to zipball
+        'tested'       => '6.9',
         'requires_php' => '7.0',
     );
 
@@ -82,12 +82,22 @@ function gfcs_check_for_updates($update, array $plugin_data, string $plugin_file
 
 /**
  * Fix the plugin folder name after download from GitHub
+ * GitHub creates folders like: guilamu-gf-chained-select-enhancer-[commit-hash]
+ * We need to rename them to: gf-chained-select-enhancer
  */
 function gfcs_fix_plugin_folder_name($source, $remote_source, $upgrader, $extra = array()) {
     global $wp_filesystem;
 
-    // Only run for our plugin
-    if (!isset($extra['plugin']) || $extra['plugin'] !== 'gf-chained-select-enhancer/gf-chained-select-enhancer.php') {
+    // Check if this is our plugin by examining the source folder name
+    $source_basename = basename($source);
+
+    // Only run for our plugin - check if the folder name contains our plugin identifier
+    if (strpos($source_basename, 'gf-chained-select-enhancer') === false) {
+        return $source;
+    }
+
+    // Secondary validation: check the $extra parameter if available
+    if (isset($extra['plugin']) && $extra['plugin'] !== 'gf-chained-select-enhancer/gf-chained-select-enhancer.php') {
         return $source;
     }
 
@@ -95,7 +105,7 @@ function gfcs_fix_plugin_folder_name($source, $remote_source, $upgrader, $extra 
     $correct_folder_name = 'gf-chained-select-enhancer';
     $new_source = trailingslashit(dirname($source)) . $correct_folder_name . '/';
 
-    // Rename if needed
+    // Rename if needed (and if it's not already the correct name)
     if ($source !== $new_source) {
         if ($wp_filesystem->move($source, $new_source)) {
             return $new_source;
@@ -142,16 +152,16 @@ function gfcs_plugin_information($result, $action, $args) {
 
     // Return plugin information object
     $plugin_info = new stdClass();
-    $plugin_info->name         = 'Chained Select Enhancer for Gravity Forms';
-    $plugin_info->slug         = 'gf-chained-select-enhancer';
-    $plugin_info->version      = $version;
-    $plugin_info->author       = '<a href="https://github.com/guilamu">Guilamu</a>';
-    $plugin_info->homepage     = 'https://github.com/guilamu/gf-chained-select-enhancer';
+    $plugin_info->name          = 'Chained Select Enhancer for Gravity Forms';
+    $plugin_info->slug          = 'gf-chained-select-enhancer';
+    $plugin_info->version       = $version;
+    $plugin_info->author        = '<a href="https://github.com/guilamu">Guilamu</a>';
+    $plugin_info->homepage      = 'https://github.com/guilamu/gf-chained-select-enhancer';
     $plugin_info->download_link = $release_data['zipball_url'];
-    $plugin_info->requires     = '5.0';
-    $plugin_info->tested       = '6.9';
-    $plugin_info->requires_php = '7.0';
-    $plugin_info->last_updated = $release_data['published_at'];
+    $plugin_info->requires      = '5.0';
+    $plugin_info->tested        = '6.9';
+    $plugin_info->requires_php  = '7.0';
+    $plugin_info->last_updated  = $release_data['published_at'];
 
     // Add sections (description, changelog, etc.)
     $plugin_info->sections = array(

@@ -20,6 +20,9 @@ if (!defined('ABSPATH')) {
 // AUTO-UPDATE FUNCTIONALITY - Check for updates from GitHub
 // ============================================================================
 
+// Register the upgrader filter GLOBALLY (not conditionally)
+add_filter( 'upgrader_install_package_result', 'gfcs_fix_plugin_folder_on_install', 10, 2 );
+
 add_filter( 'update_plugins_github.com', 'gfcs_check_for_updates', 10, 4 );
 
 /**
@@ -74,35 +77,50 @@ function gfcs_check_for_updates( $update, array $plugin_data, string $plugin_fil
         'requires_php' => '7.0',
     );
 
-    // Add filter to fix folder name during installation
-    add_filter( 'upgrader_source_selection', 'gfcs_fix_plugin_folder_name', 10, 4 );
-
     return $update;
 }
 
 /**
- * Fix the plugin folder name after download from GitHub
+ * Fix the plugin folder name after installation from GitHub
+ * This filter is registered GLOBALLY and fires after the package is installed
  */
-function gfcs_fix_plugin_folder_name( $source, $remote_source, $upgrader, $extra = array() ) {
+function gfcs_fix_plugin_folder_on_install( $result, $hook_extra ) {
     global $wp_filesystem;
 
+    // Only proceed if this is a plugin update/install
+    if ( ! isset( $hook_extra['plugin'] ) ) {
+        return $result;
+    }
+
     // Only run for our plugin
-    if ( ! isset( $extra['plugin'] ) || $extra['plugin'] !== 'gf-chained-select-enhancer/gf-chained-select-enhancer.php' ) {
-        return $source;
+    if ( $hook_extra['plugin'] !== 'gf-chained-select-enhancer/gf-chained-select-enhancer.php' ) {
+        return $result;
     }
 
-    // Get the correct folder name
-    $correct_folder_name = 'gf-chained-select-enhancer';
-    $new_source = trailingslashit( dirname( $source ) ) . $correct_folder_name . '/';
+    // Get the destination where WordPress installed the plugin
+    $destination = $result['destination'];
+    $destination_name = basename( $destination );
 
-    // Rename if needed
-    if ( $source !== $new_source ) {
-        if ( $wp_filesystem->move( $source, $new_source ) ) {
-            return $new_source;
-        }
+    // If the folder name is already correct, we're done
+    if ( $destination_name === 'gf-chained-select-enhancer' ) {
+        return $result;
     }
 
-    return $source;
+    // Build the correct destination path
+    $correct_destination = trailingslashit( dirname( $destination ) ) . 'gf-chained-select-enhancer';
+
+    // If a folder with the correct name already exists, remove it first
+    if ( $wp_filesystem->exists( $correct_destination ) ) {
+        $wp_filesystem->delete( $correct_destination, true );
+    }
+
+    // Move the downloaded plugin to the correct folder name
+    if ( $wp_filesystem->move( $destination, $correct_destination ) ) {
+        $result['destination'] = $correct_destination;
+        $result['destination_name'] = 'gf-chained-select-enhancer';
+    }
+
+    return $result;
 }
 
 add_filter( 'plugins_api', 'gfcs_plugin_information', 10, 3 );

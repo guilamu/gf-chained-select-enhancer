@@ -20,19 +20,19 @@ if (!defined('ABSPATH')) {
 // AUTO-UPDATE FUNCTIONALITY - Check for updates from GitHub
 // ============================================================================
 
-add_filter('update_plugins_github.com', 'gfcs_check_for_updates', 10, 4);
+add_filter( 'update_plugins_github.com', 'gfcs_check_for_updates', 10, 4 );
 
 /**
  * Check for updates from GitHub
  */
-function gfcs_check_for_updates($update, array $plugin_data, string $plugin_file, $locales) {
+function gfcs_check_for_updates( $update, array $plugin_data, string $plugin_file, $locales ) {
     // Only check this specific plugin
-    if ('gf-chained-select-enhancer/gf-chained-select-enhancer.php' !== $plugin_file) {
+    if ( 'gf-chained-select-enhancer/gf-chained-select-enhancer.php' !== $plugin_file ) {
         return $update;
     }
 
     // Skip if update already found
-    if (!empty($update)) {
+    if ( ! empty( $update ) ) {
         return $update;
     }
 
@@ -44,20 +44,20 @@ function gfcs_check_for_updates($update, array $plugin_data, string $plugin_file
         )
     );
 
-    if (is_wp_error($response)) {
+    if ( is_wp_error( $response ) ) {
         return $update;
     }
 
-    $release_data = json_decode(wp_remote_retrieve_body($response), true);
+    $release_data = json_decode( wp_remote_retrieve_body( $response ), true );
 
-    if (empty($release_data)) {
+    if ( empty( $release_data ) ) {
         return $update;
     }
 
-    $new_version = ltrim($release_data['tag_name'], 'v'); // Remove 'v' prefix if exists
+    $new_version = ltrim( $release_data['tag_name'], 'v' ); // Remove 'v' prefix if exists
 
     // Compare versions
-    if (!version_compare($plugin_data['Version'], $new_version, '<')) {
+    if ( ! version_compare( $plugin_data['Version'], $new_version, '<' ) ) {
         return false;
     }
 
@@ -67,7 +67,7 @@ function gfcs_check_for_updates($update, array $plugin_data, string $plugin_file
         'plugin'       => $plugin_file,
         'version'      => $new_version,
         'url'          => $release_data['html_url'],
-        'package'      => !empty($release_data['assets'][0]['browser_download_url']) 
+        'package'      => ! empty( $release_data['assets'][0]['browser_download_url'] ) 
                           ? $release_data['assets'][0]['browser_download_url'] 
                           : $release_data['zipball_url'], // Fallback to zipball
         'tested'       => '6.9',
@@ -75,39 +75,29 @@ function gfcs_check_for_updates($update, array $plugin_data, string $plugin_file
     );
 
     // Add filter to fix folder name during installation
-    add_filter('upgrader_source_selection', 'gfcs_fix_plugin_folder_name', 10, 4);
+    add_filter( 'upgrader_source_selection', 'gfcs_fix_plugin_folder_name', 10, 4 );
 
     return $update;
 }
 
 /**
  * Fix the plugin folder name after download from GitHub
- * GitHub creates folders like: guilamu-gf-chained-select-enhancer-[commit-hash]
- * We need to rename them to: gf-chained-select-enhancer
  */
-function gfcs_fix_plugin_folder_name($source, $remote_source, $upgrader, $extra = array()) {
+function gfcs_fix_plugin_folder_name( $source, $remote_source, $upgrader, $extra = array() ) {
     global $wp_filesystem;
 
-    // Check if this is our plugin by examining the source folder name
-    $source_basename = basename($source);
-
-    // Only run for our plugin - check if the folder name contains our plugin identifier
-    if (strpos($source_basename, 'gf-chained-select-enhancer') === false) {
-        return $source;
-    }
-
-    // Secondary validation: check the $extra parameter if available
-    if (isset($extra['plugin']) && $extra['plugin'] !== 'gf-chained-select-enhancer/gf-chained-select-enhancer.php') {
+    // Only run for our plugin
+    if ( ! isset( $extra['plugin'] ) || $extra['plugin'] !== 'gf-chained-select-enhancer/gf-chained-select-enhancer.php' ) {
         return $source;
     }
 
     // Get the correct folder name
     $correct_folder_name = 'gf-chained-select-enhancer';
-    $new_source = trailingslashit(dirname($source)) . $correct_folder_name . '/';
+    $new_source = trailingslashit( dirname( $source ) ) . $correct_folder_name . '/';
 
-    // Rename if needed (and if it's not already the correct name)
-    if ($source !== $new_source) {
-        if ($wp_filesystem->move($source, $new_source)) {
+    // Rename if needed
+    if ( $source !== $new_source ) {
+        if ( $wp_filesystem->move( $source, $new_source ) ) {
             return $new_source;
         }
     }
@@ -115,18 +105,18 @@ function gfcs_fix_plugin_folder_name($source, $remote_source, $upgrader, $extra 
     return $source;
 }
 
-add_filter('plugins_api', 'gfcs_plugin_information', 10, 3);
+add_filter( 'plugins_api', 'gfcs_plugin_information', 10, 3 );
 
 /**
  * Provide plugin information for the "View details" modal
  */
-function gfcs_plugin_information($result, $action, $args) {
+function gfcs_plugin_information( $result, $action, $args ) {
     // Only handle plugin_information requests for our plugin
-    if ($action !== 'plugin_information') {
+    if ( $action !== 'plugin_information' ) {
         return $result;
     }
 
-    if (!isset($args->slug) || $args->slug !== 'gf-chained-select-enhancer') {
+    if ( ! isset( $args->slug ) || $args->slug !== 'gf-chained-select-enhancer' ) {
         return $result;
     }
 
@@ -138,17 +128,17 @@ function gfcs_plugin_information($result, $action, $args) {
         )
     );
 
-    if (is_wp_error($response)) {
+    if ( is_wp_error( $response ) ) {
         return $result;
     }
 
-    $release_data = json_decode(wp_remote_retrieve_body($response), true);
+    $release_data = json_decode( wp_remote_retrieve_body( $response ), true );
 
-    if (empty($release_data)) {
+    if ( empty( $release_data ) ) {
         return $result;
     }
 
-    $version = ltrim($release_data['tag_name'], 'v');
+    $version = ltrim( $release_data['tag_name'], 'v' );
 
     // Return plugin information object
     $plugin_info = new stdClass();
@@ -166,7 +156,7 @@ function gfcs_plugin_information($result, $action, $args) {
     // Add sections (description, changelog, etc.)
     $plugin_info->sections = array(
         'description' => 'Enhances Gravity Forms Chained Selects with auto-select functionality, column hiding options, and CSV export.',
-        'changelog'   => '<h4>' . esc_html($version) . '</h4><p>' . esc_html($release_data['body']) . '</p>',
+        'changelog'   => '<h4>' . esc_html( $version ) . '</h4><p>' . esc_html( $release_data['body'] ) . '</p>',
     );
 
     return $plugin_info;

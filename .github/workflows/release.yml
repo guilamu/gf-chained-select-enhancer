@@ -1,0 +1,55 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+      - '[0-9]+.[0-9]+.[0-9]+'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get version from tag
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Create plugin zip
+        run: |
+          # Create a temporary directory with the correct folder name
+          mkdir -p build/gf-chained-select-enhancer
+          
+          # Copy plugin files (excluding git, github, and development files)
+          rsync -av --exclude='.git' \
+                    --exclude='.github' \
+                    --exclude='build' \
+                    --exclude='.gitignore' \
+                    --exclude='*.Reference.md' \
+                    --exclude='composer.*' \
+                    --exclude='package*.json' \
+                    --exclude='node_modules' \
+                    --exclude='.DS_Store' \
+                    --exclude='Thumbs.db' \
+                    ./ build/gf-chained-select-enhancer/
+          
+          # Include README.md (useful for users)
+          cp README.md build/gf-chained-select-enhancer/ 2>/dev/null || true
+          
+          # Create the zip file
+          cd build
+          zip -r ../gf-chained-select-enhancer.zip gf-chained-select-enhancer
+          cd ..
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: gf-chained-select-enhancer.zip
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

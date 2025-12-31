@@ -1,95 +1,120 @@
-# 🔗 Chained Select Enhancer for Gravity Forms
+# Chained Select Enhancer for Gravity Forms
 
-This plugin enhances the functionality of Gravity Forms Chained Selects by adding auto-select capabilities, column hiding options, full-width display for vertical chained selects, CSV export, and automatic updates from GitHub.
+Enhances Gravity Forms Chained Selects with auto-select functionality, column hiding options, and CSV export.
 
-![Plugin Screenshot](https://github.com/guilamu/gf-chained-select-enhancer/blob/main/screenshot.png)
+## Auto-Select Features
 
-## 📋 Description
+- Automatically select options when only one choice is available
+- Works seamlessly with multi-level chained selects
+- Reduces user clicks for single-path selections
 
-The Chained Select Enhancer for Gravity Forms adds the following features to Gravity Forms Chained Selects:
+## Display Customization
 
-1. **⚡ Auto-select**: Automatically selects an option when it's the only choice available.
-2. **👁️ Hide Columns**: Allows hiding specific columns in the chained select field.
-3. **📏 Full Width**: Makes vertical chained selects full width.
-4. **📊 CSV Export**: Export your chained select field choices to CSV format directly from the field settings.
-5. **🔄 Automatic Updates**: Seamlessly receive plugin updates directly from GitHub through WordPress's built-in update system.
+- Hide specific columns from the chained select interface
+- Toggle switches for each column in the form editor
+- Make vertical chained selects display full width
 
-## ⚙️ Prerequisites
+## Export Capabilities
 
-This plugin requires:
+- Export all chained select choices to CSV format
+- Direct download from field settings panel
+- Generates all possible combinations automatically
 
-1. WordPress
-2. Gravity Forms
-3. Gravity Forms Chained Selects Add-On
+## Key Features
 
-## 📦 Installation
+- **Multilingual:** Works with content in any language
+- **Translation-Ready:** All strings are internationalized
+- **Secure:** Proper nonce verification and data sanitization
+- **GitHub Updates:** Automatic updates from GitHub releases
 
-1. Install and activate Gravity Forms.
-2. Install and activate the Gravity Forms Chained Selects Add-On.
-3. Download the Chained Select Enhancer plugin ZIP file.
-4. Go to Plugins > Add New in your WordPress admin area.
-5. Click "Upload Plugin" and select the ZIP file you downloaded.
-6. Click "Install Now" and then "Activate Plugin".
+## Requirements
 
-### 🔄 Automatic Updates
+- WordPress 5.8 or higher
+- PHP 7.4 or higher
+- Gravity Forms 2.5 or higher
+- Gravity Forms Chained Selects Add-On
 
-Once installed, the plugin will automatically check for updates from the GitHub repository. When a new version is released:
+## Installation
 
-1. WordPress will notify you of available updates in the Plugins page.
-2. You can update the plugin with one click, just like any other WordPress plugin.
-3. The plugin uses GitHub releases to deliver updates securely.
+1. Upload the `gf-chained-select-enhancer` folder to `/wp-content/plugins/`
+2. Activate the plugin through the **Plugins** menu in WordPress
+3. Edit any form with a Chained Select field
+4. Configure options in the field settings panel
 
-## 🚀 Usage
+## FAQ
 
-After activation, new options will be available in the Gravity Forms editor for Chained Select fields:
+### How do I enable auto-select?
 
-- **⚡ Automatically select when only one option is available**: Enables auto-select functionality.
-- **📏 Make vertical chained select full width**: Makes the field full width when in vertical layout.
-- **👁️ Hide columns**: When you add a Chained Select field with multiple columns, the plugin now automatically detects all available columns and displays a toggle switch for each one.
-- **📊 CSV Export**: In the form editor, select a chained select field. In the field settings panel on the right, scroll down to find the "Export Choices" button.
+In the form editor, select your Chained Select field. In the field settings panel, check "Automatically select when only one option is available".
 
-## 🌍 Translation
+### How do I hide columns?
 
-To translate the plugin:
+In the field settings, use the toggle switches under "Hide Columns" to show/hide specific columns. Hidden columns are still processed but not displayed to users.
 
-1. Use a tool like Poedit to open the `gf-chained-select-enhancer.pot` file in the `languages` folder.
-2. Create a new translation and save it as `gf-chained-select-enhancer-{locale}.po` (e.g., `gf-chained-select-enhancer-fr_FR.po` for French).
-3. Save the file and Poedit will automatically generate the corresponding `.mo` file.
-4. Place both the `.po` and `.mo` files in the `languages` folder of the plugin.
+### How do I export choices to CSV?
 
-WordPress will automatically use the correct language file based on the site's locale setting.
+Select your Chained Select field in the form editor. Click the "Export Choices" button in the field settings panel. The CSV will download automatically.
 
-## 💬 Support
+### Can I customize the auto-update behavior?
 
-For support, please open an issue on the GitHub repository.
+Yes, the plugin caches GitHub API responses for 12 hours. Updates are checked automatically through WordPress's standard update system.
 
-## 🤝 Contributing
+## Project Structure
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+```
+.
+├── gf-chained-select-enhancer.php    # Main plugin file (bootstrap)
+├── uninstall.php                     # Cleanup on uninstall
+├── README.md
+├── assets
+│   ├── css
+│   │   └── admin.css                 # Admin toggle switch styles
+│   └── js
+│       └── admin.js                  # Admin field settings scripts
+├── includes
+│   ├── class-gf-chained-select-enhancer.php  # Main functionality
+│   └── class-github-updater.php      # GitHub auto-updates
+└── languages
+    ├── gf-chained-select-enhancer-fr_FR.mo   # French translation (binary)
+    ├── gf-chained-select-enhancer-fr_FR.po   # French translation (source)
+    └── gf-chained-select-enhancer.pot        # Translation template
+```
 
-## 📄 License
+## Changelog
 
-This project is licensed under the GNU AGPL.
+### 1.4.0
+- **New:** Modular architecture with separate class files
+- **New:** Externalized CSS and JavaScript assets
+- **Improved:** Security with proper nonce/data sanitization
+- **Improved:** Performance by loading CSS only when forms render
+- **Improved:** GitHub API caching (12-hour transient)
+- **Fixed:** CSV export now streams directly (no public file storage)
 
-## 🙏 Acknowledgements
+### 1.3
+- **New:** Automatic updates from GitHub releases
+- **New:** Update URI integration for seamless WordPress updates
 
-A million thanks to the wizards from [GravityWiz](https://gravitywiz.com/) (David, Samuel, Matt, Saif, you're the bests!) for helping me through the years with anything related to Gravity Forms!
+### 1.2
+- **New:** CSV export functionality for chained select choices
 
-## 📝 Change Log
+### 1.1
+- **Improved:** Column hiding with toggle switches
 
-### Version 1.3 - 2025-11-26
-- 🔄 **New feature**: Automatic updates from GitHub
-- ✨ Plugin now automatically checks for and installs updates from the GitHub repository
-- 🔧 Added Update URI to plugin header for seamless update integration
+### 1.0.1
+- **Fixed:** Hidden columns now properly hidden on frontend
 
-### Version 1.2 - 2025-11-06
-- 📊 **New feature**: CSV Export
+### 1.0.0
+- Initial release
+- Auto-select when single option available
+- Column hiding options
+- Full-width vertical display option
 
-### Version 1.1 - 2025-11-05
-- 👁️ Column hiding enhancement
+## License
 
-### Version 1.01 - 2024-11-29
-- 🐛 Hidden lines are now properly hidden
+This project is licensed under the GNU Affero General Public License v3.0 (AGPL-3.0) - see the [LICENSE](LICENSE) file for details.
 
-### Version 1.0 - 2024-07-01
-- 🎉 Initial version
+---
+
+<p align="center">
+  Made with love for the WordPress community
+</p>

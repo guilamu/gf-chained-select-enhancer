@@ -1,54 +1,82 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: \n"
+"Project-Id-Version: Chained Select Enhancer for Gravity Forms 1.4.0\n"
 "Report-Msgid-Bugs-To: https://github.com/guilamu/gf-chained-select-enhancer\n"
-"POT-Creation-Date: 2024-11-05 17:15+0000\n"
-"PO-Revision-Date: 2025-11-06 09:42+0100\n"
-"Last-Translator: \n"
-"Language-Team: \n"
-"Language: fr\n"
+"POT-Creation-Date: 2025-12-31 12:00+0000\n"
+"PO-Revision-Date: 2025-12-31 12:29+0100\n"
+"Last-Translator: Guilamu <guilamu@gmail.com>\n"
+"Language-Team: French\n"
+"Language: fr_FR\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit 3.4.4\n"
+"X-Generator: Poedit 3.8\n"
 "X-Poedit-Basepath: .\n"
 
-#: gf-chained-select-enhancer.php
+#: includes/class-gf-chained-select-enhancer.php
 msgid "Automatically select when only one option is available"
 msgstr "Sélectionner automatiquement lorsqu'une seule option est disponible"
 
-#: gf-chained-select-enhancer.php
+#: includes/class-gf-chained-select-enhancer.php
 msgid "Make vertical chained select full width"
 msgstr "Affiche en pleine largeur si chained select vertical"
 
-#: gf-chained-select-enhancer.php
+#: includes/class-gf-chained-select-enhancer.php
 msgid "Hide Columns"
 msgstr "Masquer les colonnes"
 
-#: gf-chained-select-enhancer.php
-msgid "No columns detected. Add choices to see column toggles."
-msgstr "Aucune colonne détectée."
-
-#: gf-chained-select-enhancer.php
-msgid "Hidden"
-msgstr "Masqué"
-
-#: gf-chained-select-enhancer.php
-msgid "Visible"
-msgstr "Visible"
-
-#: gf-chained-select-enhancer.php
+#: includes/class-gf-chained-select-enhancer.php
 msgid "Export Choices"
 msgstr "Exporter les choix"
 
-#: gf-chained-select-enhancer.php
+#: includes/class-gf-chained-select-enhancer.php
+msgid "Hidden"
+msgstr "Masqué"
+
+#: includes/class-gf-chained-select-enhancer.php
+msgid "Visible"
+msgstr "Visible"
+
+#: includes/class-gf-chained-select-enhancer.php
+msgid "Please select a chained select field first"
+msgstr "Veuillez d'abord sélectionner un champ de sélection chaînée"
+
+#: includes/class-gf-chained-select-enhancer.php
 msgid "Exporting..."
 msgstr "Export en cours..."
 
-#: gf-chained-select-enhancer.php
+#: includes/class-gf-chained-select-enhancer.php
 msgid "Export complete"
 msgstr "Export terminé"
 
-#: gf-chained-select-enhancer.php
-msgid "Please select a chained select field first"
-msgstr "Veuillez d'abord sélectionner un champ de sélection chaînée"
+#: includes/class-gf-chained-select-enhancer.php
+msgid "Export failed"
+msgstr "Échec de l'export"
+
+#: includes/class-gf-chained-select-enhancer.php
+msgid "Access denied"
+msgstr "Accès refusé"
+
+#: includes/class-gf-chained-select-enhancer.php
+msgid "Error"
+msgstr "Erreur"
+
+#: includes/class-gf-chained-select-enhancer.php
+msgid "Security check failed"
+msgstr "Échec de la vérification de sécurité"
+
+#: includes/class-gf-chained-select-enhancer.php
+msgid "Invalid parameters"
+msgstr "Paramètres invalides"
+
+#: includes/class-gf-chained-select-enhancer.php
+msgid "Gravity Forms not available"
+msgstr "Gravity Forms non disponible"
+
+#: includes/class-gf-chained-select-enhancer.php
+msgid "Form not found"
+msgstr "Formulaire non trouvé"
+
+#: includes/class-gf-chained-select-enhancer.php
+msgid "Chained select field not found"
+msgstr "Champ de sélection chaînée non trouvé"

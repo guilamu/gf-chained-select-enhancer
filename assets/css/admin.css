@@ -1,0 +1,126 @@
+/**
+ * Chained Select Enhancer Admin Styles
+ *
+ * @package GF_Chained_Select_Enhancer
+ */
+
+/* Toggle Switch Container */
+.hide_columns_setting .gfcs-toggle-switches {
+    margin-top: 10px;
+    clear: both;
+}
+
+/* Toggle Switch Item */
+.hide_columns_setting .gfcs-toggle-item {
+    display: flex !important;
+    align-items: center;
+    margin-bottom: 8px;
+    padding: 6px 0;
+    width: 100%;
+}
+
+/* Toggle Switch Wrapper */
+.hide_columns_setting .gfcs-toggle-switch {
+    position: relative;
+    display: inline-block !important;
+    width: 44px !important;
+    height: 24px !important;
+    margin-right: 10px;
+    flex-shrink: 0;
+    vertical-align: middle;
+}
+
+/* Hidden Checkbox */
+.hide_columns_setting .gfcs-toggle-switch input[type="checkbox"] {
+    opacity: 0 !important;
+    width: 0 !important;
+    height: 0 !important;
+    position: absolute !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* Toggle Slider */
+.hide_columns_setting .gfcs-toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #22a753;
+    transition: 0.3s;
+    border-radius: 24px;
+}
+
+/* Toggle Slider Circle */
+.hide_columns_setting .gfcs-toggle-slider::before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.3s;
+    border-radius: 50%;
+}
+
+/* Checked State */
+.hide_columns_setting .gfcs-toggle-switch input[type="checkbox"]:checked + .gfcs-toggle-slider {
+    background-color: #dc3232;
+}
+
+.hide_columns_setting .gfcs-toggle-switch input[type="checkbox"]:checked + .gfcs-toggle-slider::before {
+    transform: translateX(20px);
+}
+
+/* Toggle Label */
+.hide_columns_setting .gfcs-toggle-label {
+    font-size: 13px;
+    color: #444;
+    font-weight: normal;
+    user-select: none;
+    flex: 1;
+}
+
+/* Toggle Status */
+.hide_columns_setting .gfcs-toggle-status {
+    display: inline-block !important;
+    visibility: visible !important;
+    font-size: 11px;
+    color: #666;
+    margin-left: auto;
+    padding-left: 10px;
+    font-weight: 600;
+    min-width: 60px;
+    text-align: right;
+}
+
+.hide_columns_setting .gfcs-toggle-status.gfcs-hidden {
+    display: inline-block !important;
+    visibility: visible !important;
+    color: #dc3232 !important;
+}
+
+.hide_columns_setting .gfcs-toggle-status.gfcs-visible {
+    display: inline-block !important;
+    visibility: visible !important;
+    color: #22a753 !important;
+}
+
+/* CSV Export Section */
+.csv_export_setting {
+    margin-top: 15px;
+    padding-top: 15px;
+    border-top: 1px solid #ddd;
+}
+
+#gfcs_export_status {
+    color: #22a753;
+    font-size: 12px;
+}
+
+#gfcs_export_status.gfcs-error {
+    color: #dc3232;
+}

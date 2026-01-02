@@ -147,6 +147,23 @@
     }
 
     /**
+     * Update full width class on field preview
+     *
+     * @param {number} fieldId The field ID
+     * @param {boolean} isFullWidth Whether full width is enabled
+     */
+    function updateFullWidthPreview(fieldId, isFullWidth) {
+        var container = document.querySelector('#field_' + fieldId + ' .ginput_chained_selects_container.vertical');
+        if (container) {
+            if (isFullWidth) {
+                container.classList.add('gfcs-full-width');
+            } else {
+                container.classList.remove('gfcs-full-width');
+            }
+        }
+    }
+
+    /**
      * Export current field to CSV
      *
      * @param {Event} event Click event
@@ -236,6 +253,16 @@
                 $('#field_full_width').prop('checked', field.fullWidth === true);
                 $('#field_hide_columns').val(field.hideColumns || '');
                 renderColumnToggles(field);
+                // Apply full width class to preview
+                updateFullWidthPreview(field.id, field.fullWidth === true);
+            }
+        });
+
+        // Handle full width checkbox change
+        $(document).on('change', '#field_full_width', function () {
+            var field = typeof GetSelectedField === 'function' ? GetSelectedField() : null;
+            if (field) {
+                updateFullWidthPreview(field.id, this.checked);
             }
         });
 

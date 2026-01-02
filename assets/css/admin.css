@@ -4,7 +4,7 @@
  * @package GF_Chained_Select_Enhancer
  */
 
-/* Toggle Switch Container */
+/* Toggle Switch Container - Gravity Forms Style */
 .hide_columns_setting .gfcs-toggle-switches {
     margin-top: 10px;
     clear: both;
@@ -15,17 +15,13 @@
     display: flex !important;
     align-items: center;
     margin-bottom: 8px;
-    padding: 6px 0;
     width: 100%;
 }
 
-/* Toggle Switch Wrapper */
+/* Toggle Switch Wrapper - Exact GF Style */
 .hide_columns_setting .gfcs-toggle-switch {
     position: relative;
     display: inline-block !important;
-    width: 44px !important;
-    height: 24px !important;
-    margin-right: 10px;
     flex-shrink: 0;
     vertical-align: middle;
 }
@@ -40,39 +36,58 @@
     padding: 0 !important;
 }
 
-/* Toggle Slider */
+/* Toggle Container - Exact GF .gform-field__toggle-container style */
 .hide_columns_setting .gfcs-toggle-slider {
-    position: absolute;
+    background: #3e7da6;
+    /* GF blue - visible/on state (unchecked for us) */
+    border: 2px solid transparent;
+    border-radius: 15px;
+    box-shadow: inset 0 1px 2px rgba(90, 97, 105, 0.15);
     cursor: pointer;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: #22a753;
-    transition: 0.3s;
-    border-radius: 24px;
+    display: inline-block;
+    height: 1.125rem;
+    margin-right: 0.5rem;
+    padding: 0.1275rem;
+    position: relative;
+    transition: all 0.25s ease;
+    transition-duration: 0.2s;
+    transition-property: background-color, border-color, color, fill, stroke;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.1, 1);
+    width: 2.625rem;
 }
 
-/* Toggle Slider Circle */
+/* Toggle Switch/Handle - Exact GF .gform-field__toggle-switch style with SVG icons */
 .hide_columns_setting .gfcs-toggle-slider::before {
-    position: absolute;
-    content: "";
-    height: 18px;
-    width: 18px;
-    left: 3px;
-    bottom: 3px;
-    background-color: white;
-    transition: 0.3s;
+    /* Checkmark SVG for visible state (same as GF checked state) */
+    background: #fff center no-repeat url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iOCIgaGVpZ2h0PSI3IiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGQ9Ik0yLjY2NjcgNC4zOTA1TDYuODYxOS4xOTUzYS42NjY3LjY2NjcgMCAwMS45NDI4Ljk0MjhsLTUuMTM4IDUuMTM4TC4xOTUzIDMuODA0N2EuNjY2Ny42NjY3IDAgMDEuOTQyOC0uOTQyOGwxLjUyODYgMS41Mjg2eiIgZmlsbD0iIzNFN0RBNiIvPjwvc3ZnPg==);
+    background-size: 0.625rem;
     border-radius: 50%;
+    box-shadow: 0 1px 4px rgba(24, 24, 72, 0.123698);
+    content: "";
+    display: block;
+    height: 1.125rem;
+    left: 1.5rem;
+    /* Start on right side when visible (unchecked) */
+    position: relative;
+    transition: all 0.25s ease;
+    transition-duration: 0.2s;
+    transition-property: background, left;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.1, 1);
+    width: 1.125rem;
 }
 
-/* Checked State */
-.hide_columns_setting .gfcs-toggle-switch input[type="checkbox"]:checked + .gfcs-toggle-slider {
-    background-color: #dc3232;
+/* Checked State - Hidden (gray background #9092b2) */
+.hide_columns_setting .gfcs-toggle-switch input[type="checkbox"]:checked+.gfcs-toggle-slider {
+    background: #9092b2;
+    /* GF gray - hidden/off state */
 }
 
-.hide_columns_setting .gfcs-toggle-switch input[type="checkbox"]:checked + .gfcs-toggle-slider::before {
-    transform: translateX(20px);
+/* Move handle to left when checked (hidden) and show X icon */
+.hide_columns_setting .gfcs-toggle-switch input[type="checkbox"]:checked+.gfcs-toggle-slider::before {
+    /* X icon SVG for hidden state (same as GF unchecked state) */
+    background-image: url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAiIGhlaWdodD0iMTAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBjbGlwLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik0yLjQ3NDkgMi41MjUxYS41ODMzLjU4MzMgMCAwMDAgLjgyNUw0LjEyNDggNWwtMS42NSAxLjY1YS41ODMzLjU4MzMgMCAxMC44MjUuODI0OWwxLjY1LTEuNjUgMS42NDk5IDEuNjVhLjU4MzMuNTgzMyAwIDEwLjgyNS0uODI1TDUuNzc0NiA1bDEuNjUtMS42NWEuNTgzMy41ODMzIDAgMTAtLjgyNS0uODI0OWwtMS42NSAxLjY1LTEuNjQ5OS0xLjY1YS41ODMzLjU4MzMgMCAwMC0uODI1IDB6IiBmaWxsPSIjOTA5MkIyIi8+PC9zdmc+);
+    background-size: 0.625rem;
+    left: 0;
 }
 
 /* Toggle Label */
@@ -100,13 +115,15 @@
 .hide_columns_setting .gfcs-toggle-status.gfcs-hidden {
     display: inline-block !important;
     visibility: visible !important;
-    color: #dc3232 !important;
+    color: #9092b2 !important;
+    /* GF gray */
 }
 
 .hide_columns_setting .gfcs-toggle-status.gfcs-visible {
     display: inline-block !important;
     visibility: visible !important;
-    color: #22a753 !important;
+    color: #3e7da6 !important;
+    /* GF blue */
 }
 
 /* CSV Export Section */

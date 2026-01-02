@@ -141,3 +141,9 @@
 #gfcs_export_status.gfcs-error {
     color: #dc3232;
 }
+
+/* Full Width Preview for Vertical Chained Selects */
+.ginput_chained_selects_container.vertical.gfcs-full-width select {
+    inline-size: 100% !important;
+    max-inline-size: 100% !important;
+}

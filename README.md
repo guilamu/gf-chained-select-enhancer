@@ -55,10 +55,6 @@ In the field settings, use the toggle switches under "Hide Columns" to show/hide
 
 Select your Chained Select field in the form editor. Click the "Export Choices" button in the field settings panel. The CSV will download automatically.
 
-### Can I customize the auto-update behavior?
-
-Yes, the plugin caches GitHub API responses for 12 hours. Updates are checked automatically through WordPress's standard update system.
-
 ## Project Structure
 
 ```

@@ -55,6 +55,10 @@ In the field settings, use the toggle switches under "Hide Columns" to show/hide
 
 Select your Chained Select field in the form editor. Click the "Export Choices" button in the field settings panel. The CSV will download automatically.
 
+### Can I customize the auto-update behavior?
+
+Yes, the plugin caches GitHub API responses for 12 hours. Updates are checked automatically through WordPress's standard update system.
+
 ## Project Structure
 
 ```
@@ -77,6 +81,9 @@ Select your Chained Select field in the form editor. Click the "Export Choices" 
 ```
 
 ## Changelog
+
+### 1.5.1
+- **Fixed:** Full width vertical chained select preview now works correctly in form editor
 
 ### 1.5.0
 - **Improved:** Toggle switches now match native Gravity Forms toggle styling

@@ -36,6 +36,7 @@ jobs:
                     --exclude='node_modules' \
                     --exclude='.DS_Store' \
                     --exclude='Thumbs.db' \
+                    --exclude='screenshot*.*' \
                     ./ build/gf-chained-select-enhancer/
           
           # Include README.md (useful for users)

@@ -84,8 +84,6 @@ Yes, the plugin caches GitHub API responses for 12 hours. Updates are checked au
 
 ### 1.5.0
 - **Improved:** Toggle switches now match native Gravity Forms toggle styling
-- **Improved:** Uses same colors, dimensions, SVG icons, and animations as GF core
-- **Improved:** Better visual consistency with Gravity Forms admin interface
 
 ### 1.4.0
 - **New:** Modular architecture with separate class files

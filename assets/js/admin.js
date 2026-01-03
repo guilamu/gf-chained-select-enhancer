@@ -268,6 +268,16 @@
 
         // Expose export function globally for onclick handler
         window.gfcsExportCurrentField = exportCurrentField;
+
+        // Initialize full width preview for all fields on page load
+        // This ensures fields with fullWidth=true display correctly before being clicked
+        if (typeof form !== 'undefined' && form && form.fields) {
+            form.fields.forEach(function (field) {
+                if ((field.type === 'chainedselect' || field.type === 'chained_select') && field.fullWidth === true) {
+                    updateFullWidthPreview(field.id, true);
+                }
+            });
+        }
     });
 
 })(jQuery);

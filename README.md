@@ -82,6 +82,9 @@ Yes, the plugin caches GitHub API responses for 12 hours. Updates are checked au
 
 ## Changelog
 
+### 1.5.2
+- **Fixed:** Full width chained selects now display correctly on initial form editor load
+
 ### 1.5.1
 - **Fixed:** Full width vertical chained select preview now works correctly in form editor
 

@@ -3,7 +3,7 @@
  * Plugin Name: Chained Select Enhancer for Gravity Forms
  * Plugin URI: https://github.com/guilamu/gf-chained-select-enhancer
  * Description: Enhances Gravity Forms Chained Selects with auto-select functionality, column hiding options, and CSV export.
- * Version: 1.5.1
+ * Version: 1.5.2
  * Author: Guilamu
  * Author URI: https://github.com/guilamu
  * Text Domain: gf-chained-select-enhancer
@@ -20,7 +20,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Plugin constants.
-define('GFCS_VERSION', '1.5.1');
+define('GFCS_VERSION', '1.5.2');
 define('GFCS_PLUGIN_FILE', plugin_basename(__FILE__));
 define('GFCS_PLUGIN_PATH', plugin_dir_path(__FILE__));
 define('GFCS_PLUGIN_URL', plugin_dir_url(__FILE__));

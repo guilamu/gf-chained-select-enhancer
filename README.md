@@ -82,6 +82,9 @@ Yes, the plugin caches GitHub API responses for 12 hours. Updates are checked au
 
 ## Changelog
 
+### 1.5.3
+- **Fixed:** Fix spacing issue in backend editor when labels are hidden (removes excessive margin) because of main plugin update to 1.8.1.
+
 ### 1.5.2
 - **Fixed:** Full width chained selects now display correctly on initial form editor load
 

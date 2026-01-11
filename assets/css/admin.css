@@ -147,3 +147,9 @@
     inline-size: 100% !important;
     max-inline-size: 100% !important;
 }
+
+/* Fix spacing when labels are hidden in backend editor */
+/* Remove margin-bottom added by Gravity Forms Chained Select plugin update */
+.gform_editor .field_sublabel_hidden_label .ginput_complex.ginput_container select {
+    margin-bottom: 0 !important;
+}

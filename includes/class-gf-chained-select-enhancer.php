@@ -67,6 +67,9 @@ class GFCS_Chained_Select_Enhancer
         // Load text domain.
         add_action('plugins_loaded', array($this, 'load_plugin_textdomain'));
 
+        // Inject XLSX support script before the GF Chained Selects script
+        add_filter('script_loader_tag', array($this, 'inject_xlsx_plupload_script'), 10, 3);
+
         // Admin hooks - use gform_enqueue_scripts for form editor.
         add_action('gform_field_standard_settings', array($this, 'add_field_settings'), 10, 2);
         add_action('gform_editor_js', array($this, 'editor_script'));
@@ -93,6 +96,62 @@ class GFCS_Chained_Select_Enhancer
             false,
             dirname(plugin_basename($this->plugin_path . 'gf-chained-select-enhancer.php')) . '/languages/'
         );
+    }
+
+    /**
+     * Inject inline script to add XLSX support to Plupload.
+     *
+     * Uses script_loader_tag filter to inject our wrapper script immediately
+     * before the GF Chained Selects admin-form-editor.js script tag.
+     * This guarantees our wrapper runs before the GF script creates its uploader.
+     *
+     * @param string $tag    The script tag HTML.
+     * @param string $handle The script handle.
+     * @param string $src    The script source URL.
+     * @return string Modified script tag HTML.
+     */
+    public function inject_xlsx_plupload_script(string $tag, string $handle, string $src): string
+    {
+        // Only modify the GF Chained Selects admin form editor script
+        if ('gform_chained_selects_admin_form_editor' !== $handle) {
+            return $tag;
+        }
+
+        // Wrap Plupload.Uploader constructor to modify mime_types filter for chained selects
+        $inline_script = <<<'JS'
+<script type="text/javascript" id="gfcs-xlsx-plupload-wrapper">
+(function() {
+    if (!window.plupload || !window.plupload.Uploader) {
+        return;
+    }
+    
+    var OriginalUploader = window.plupload.Uploader;
+    
+    window.plupload.Uploader = function(options) {
+        // Check if this is the chained selects uploader
+        if (options && options.container) {
+            var containerId = typeof options.container === 'string' 
+                ? options.container 
+                : (options.container.id || '');
+            
+            if (containerId === 'gfcs-container' && options.filters && options.filters.mime_types) {
+                // Modify filters to allow xlsx in addition to csv
+                options.filters.mime_types = [
+                    { title: 'Spreadsheet files', extensions: 'csv,xlsx' }
+                ];
+            }
+        }
+        OriginalUploader.call(this, options);
+    };
+    
+    window.plupload.Uploader.prototype = OriginalUploader.prototype;
+    window.plupload.Uploader.prototype.constructor = window.plupload.Uploader;
+})();
+</script>
+JS;
+
+        // Prepend our wrapper script before the GF script tag
+        return $inline_script . "\n" . $tag;
     }
 
     /**

@@ -1,6 +1,6 @@
 # Chained Select Enhancer for Gravity Forms
 
-Enhances Gravity Forms Chained Selects with auto-select functionality, column hiding options, and CSV export.
+Enhances Gravity Forms Chained Selects with auto-select functionality, column hiding options, XLSX import support, and CSV export.
 
 ## Auto-Select Features
 
@@ -13,6 +13,12 @@ Enhances Gravity Forms Chained Selects with auto-select functionality, column hi
 - Hide specific columns from the chained select interface
 - Toggle switches for each column in the form editor
 - Make vertical chained selects display full width
+
+## XLSX Import Support
+
+- Import chained select choices from XLSX files (in addition to CSV)
+- Uses native PHP ZipArchive - no external dependencies
+- Supports Excel workbooks created by Microsoft Excel, LibreOffice, Google Sheets
 
 ## Export Capabilities
 
@@ -73,7 +79,9 @@ Yes, the plugin caches GitHub API responses for 12 hours. Updates are checked au
 │       └── admin.js                  # Admin field settings scripts
 ├── includes
 │   ├── class-gf-chained-select-enhancer.php  # Main functionality
-│   └── class-github-updater.php      # GitHub auto-updates
+│   ├── class-github-updater.php      # GitHub auto-updates
+│   ├── class-import-handler.php      # XLSX import handler
+│   └── class-xlsx-parser.php         # XLSX file parser
 └── languages
     ├── gf-chained-select-enhancer-fr_FR.mo   # French translation (binary)
     ├── gf-chained-select-enhancer-fr_FR.po   # French translation (source)
@@ -81,6 +89,14 @@ Yes, the plugin caches GitHub API responses for 12 hours. Updates are checked au
 ```
 
 ## Changelog
+
+### 1.7.0
+- **New:** Guilamu Bug Reporter integration for easy bug reporting
+- **Improved:** Code cleanup and optimization
+
+### 1.6.0
+- **New:** XLSX file import support for chained select choices
+- **New:** Native PHP ZipArchive-based XLSX parser (no external dependencies)
 
 ### 1.5.3
 - **Fixed:** Fix spacing issue in backend editor when labels are hidden (removes excessive margin) because of main plugin update to 1.8.1.

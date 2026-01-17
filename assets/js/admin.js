@@ -9,6 +9,9 @@
 (function ($) {
     'use strict';
 
+    // NOTE: XLSX Plupload support is injected via PHP inline script
+    // (see class-gf-chained-select-enhancer.php inject_xlsx_plupload_script)
+
     // Settings will be read inside document.ready to ensure wp_localize_script has run
     var settings;
 

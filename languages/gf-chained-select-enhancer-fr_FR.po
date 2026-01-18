@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: Chained Select Enhancer for Gravity Forms 1.7.1\n"
 "Report-Msgid-Bugs-To: https://github.com/guilamu/gf-chained-select-enhancer\n"
 "POT-Creation-Date: 2026-01-18 21:00+0000\n"
-"PO-Revision-Date: 2026-01-18 21:21+0100\n"
+"PO-Revision-Date: 2026-01-18 21:28+0100\n"
 "Last-Translator: Guilamu <guilamu@gmail.com>\n"
 "Language-Team: French\n"
 "Language: fr_FR\n"
@@ -15,7 +15,7 @@ msgstr ""
 
 #. Plugin Name of the plugin
 msgid "Chained Select Enhancer for Gravity Forms"
-msgstr "Améliorateur de sélection en chaîne pour Gravity Forms"
+msgstr ""
 
 #. Plugin URI of the plugin
 msgid "https://github.com/guilamu/gf-chained-select-enhancer"

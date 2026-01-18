@@ -90,6 +90,10 @@ Yes, the plugin caches GitHub API responses for 12 hours. Updates are checked au
 
 ## Changelog
 
+### 1.7.1
+- **New:** Plugin description translation support in WordPress plugins list
+- **Improved:** Updated translation files with plugin metadata
+
 ### 1.7.0
 - **New:** Guilamu Bug Reporter integration for easy bug reporting
 - **Improved:** Code cleanup and optimization

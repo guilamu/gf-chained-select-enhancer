@@ -270,7 +270,32 @@ class GFCS_GitHub_Updater {
         }
 
         $release_data = self::get_release_data();
+        
+        // Even if GitHub data is unavailable, return a proper response object
+        // to prevent WordPress from falling back to WordPress.org API
         if ( null === $release_data ) {
+            // Get current plugin version from plugin headers
+            $plugin_file = WP_PLUGIN_DIR . '/' . self::PLUGIN_FILE;
+            $plugin_data = get_plugin_data( $plugin_file, false, false );
+            $current_version = $plugin_data['Version'] ?? '1.0.0';
+            
+            $res                 = new stdClass();
+            $res->name           = self::PLUGIN_NAME;
+            $res->slug           = self::PLUGIN_SLUG;
+            $res->version        = $current_version;
+            $res->author         = sprintf( '<a href="https://github.com/%s">%s</a>', self::GITHUB_USER, self::GITHUB_USER );
+            $res->homepage       = sprintf( 'https://github.com/%s/%s', self::GITHUB_USER, self::GITHUB_REPO );
+            $res->requires       = self::REQUIRES_WP;
+            $res->tested         = self::TESTED_WP;
+            $res->requires_php   = self::REQUIRES_PHP;
+            $res->sections       = array(
+                'description' => self::PLUGIN_DESCRIPTION,
+                'changelog'   => sprintf(
+                    '<p>Unable to fetch changelog from GitHub. Visit <a href="https://github.com/%s/%s/releases" target="_blank">GitHub releases</a> for the latest changelog.</p>',
+                    self::GITHUB_USER,
+                    self::GITHUB_REPO
+                ),
+            );
             return $res;
         }
 

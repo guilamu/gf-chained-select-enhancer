@@ -308,7 +308,7 @@ class GFCS_Import_Handler
     {
         $choices = array_values($choices);
 
-        for ($i = 0; $i <= count($choices); $i++) {
+        for ($i = 0; $i < count($choices); $i++) {
             if (!empty($choices[$i][$prop])) {
                 $choices[$i][$prop] = $this->array_values_recursive($choices[$i][$prop], $prop);
             }

@@ -192,7 +192,7 @@ class GFCS_GitHub_Updater {
                 if (
                     isset( $asset['browser_download_url'] ) &&
                     isset( $asset['name'] ) &&
-                    str_ends_with( $asset['name'], '.zip' )
+                    substr( $asset['name'], -4 ) === '.zip'
                 ) {
                     return $asset['browser_download_url'];
                 }

@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: Chained Select Enhancer for Gravity Forms 1.7.1\n"
+"Project-Id-Version: Chained Select Enhancer for Gravity Forms 1.7.2\n"
 "Report-Msgid-Bugs-To: https://github.com/guilamu/gf-chained-select-enhancer\n"
-"POT-Creation-Date: 2026-01-18 21:00+0000\n"
-"PO-Revision-Date: 2026-01-18 21:28+0100\n"
+"POT-Creation-Date: 2026-02-05 12:00+0000\n"
+"PO-Revision-Date: 2026-02-05 21:57+0100\n"
 "Last-Translator: Guilamu <guilamu@gmail.com>\n"
 "Language-Team: French\n"
 "Language: fr_FR\n"
@@ -96,3 +96,47 @@ msgstr "Formulaire non trouvé"
 #: includes/class-gf-chained-select-enhancer.php
 msgid "Chained select field not found"
 msgstr "Champ de sélection chaînée non trouvé"
+
+#: gf-chained-select-enhancer.php
+msgid "\\ud83d\\udc1b Report a Bug"
+msgstr "\\ud83d\\udc1b Signaler un bug"
+
+#: gf-chained-select-enhancer.php
+msgid "\\ud83d\\udc1b Report a Bug (install Bug Reporter)"
+msgstr "\\ud83d\\udc1b Signaler un bug (installer Bug Reporter)"
+
+#: includes/class-import-handler.php
+msgid "Permission denied."
+msgstr "Accès refusé."
+
+#: includes/class-import-handler.php
+msgid "XLSX must have a header row and at least one data row."
+msgstr "Le fichier XLSX doit contenir une ligne d'en-tête et au moins une ligne de données."
+
+#: includes/class-import-handler.php
+msgid "One of your columns has exceeded the limit for unique values."
+msgstr "Une de vos colonnes a dépassé la limite de valeurs uniques."
+
+#: includes/class-import-handler.php
+msgid "Only CSV and XLSX files are allowed."
+msgstr "Seuls les fichiers CSV et XLSX sont autorisés."
+
+#: includes/class-xlsx-parser.php
+msgid "PHP ZipArchive extension is required for XLSX support."
+msgstr "L'extension PHP ZipArchive est requise pour la prise en charge XLSX."
+
+#: includes/class-xlsx-parser.php
+msgid "XLSX file not found."
+msgstr "Fichier XLSX introuvable."
+
+#: includes/class-xlsx-parser.php
+msgid "Failed to open XLSX file."
+msgstr "Impossible d'ouvrir le fichier XLSX."
+
+#: includes/class-xlsx-parser.php
+msgid "No worksheet found in XLSX file."
+msgstr "Aucune feuille de calcul trouvée dans le fichier XLSX."
+
+#: includes/class-xlsx-parser.php
+msgid "Failed to parse worksheet XML."
+msgstr "Impossible d'analyser le XML de la feuille de calcul."

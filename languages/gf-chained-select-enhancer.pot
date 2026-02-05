@@ -1,8 +1,8 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: Chained Select Enhancer for Gravity Forms 1.7.1\n"
+"Project-Id-Version: Chained Select Enhancer for Gravity Forms 1.7.2\n"
 "Report-Msgid-Bugs-To: https://github.com/guilamu/gf-chained-select-enhancer\n"
-"POT-Creation-Date: 2026-01-18 21:00+0000\n"
+"POT-Creation-Date: 2026-02-05 12:00+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -93,4 +93,48 @@ msgstr ""
 
 #: includes/class-gf-chained-select-enhancer.php
 msgid "Chained select field not found"
+msgstr ""
+
+#: gf-chained-select-enhancer.php
+msgid "\ud83d\udc1b Report a Bug"
+msgstr ""
+
+#: gf-chained-select-enhancer.php
+msgid "\ud83d\udc1b Report a Bug (install Bug Reporter)"
+msgstr ""
+
+#: includes/class-import-handler.php
+msgid "Permission denied."
+msgstr ""
+
+#: includes/class-import-handler.php
+msgid "XLSX must have a header row and at least one data row."
+msgstr ""
+
+#: includes/class-import-handler.php
+msgid "One of your columns has exceeded the limit for unique values."
+msgstr ""
+
+#: includes/class-import-handler.php
+msgid "Only CSV and XLSX files are allowed."
+msgstr ""
+
+#: includes/class-xlsx-parser.php
+msgid "PHP ZipArchive extension is required for XLSX support."
+msgstr ""
+
+#: includes/class-xlsx-parser.php
+msgid "XLSX file not found."
+msgstr ""
+
+#: includes/class-xlsx-parser.php
+msgid "Failed to open XLSX file."
+msgstr ""
+
+#: includes/class-xlsx-parser.php
+msgid "No worksheet found in XLSX file."
+msgstr ""
+
+#: includes/class-xlsx-parser.php
+msgid "Failed to parse worksheet XML."
 msgstr ""

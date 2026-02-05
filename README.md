@@ -90,6 +90,11 @@ Yes, the plugin caches GitHub API responses for 12 hours. Updates are checked au
 
 ## Changelog
 
+### 1.7.2
+- **Fixed:** PHP 7.4 compatibility — replaced `str_ends_with()` (PHP 8+) with `substr()` in GitHub updater
+- **Fixed:** Off-by-one loop in XLSX import `array_values_recursive()`
+- **Fixed:** License mismatch between plugin header and README (now AGPL-3.0 everywhere)
+
 ### 1.7.1
 - **New:** Plugin description translation support in WordPress plugins list
 - **Improved:** Updated translation files with plugin metadata

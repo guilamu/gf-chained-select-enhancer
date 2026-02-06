@@ -2,6 +2,9 @@
 
 Enhances Gravity Forms Chained Selects with auto-select functionality, column hiding options, XLSX import support, and CSV export.
 
+![Plugin Screenshot](https://github.com/guilamu/gf-chained-select-enhancer/blob/main/screenshot.png)
+
+
 ## Auto-Select Features
 
 - Automatically select options when only one choice is available

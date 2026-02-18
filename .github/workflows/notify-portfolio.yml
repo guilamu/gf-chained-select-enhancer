@@ -1,0 +1,17 @@
+name: Notify Portfolio on Release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger portfolio rebuild
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.PORTFOLIO_PAT }}
+          repository: guilamu/guilamu.github.io
+          event-type: release_published
+          client-payload: '{"repo": "${{ github.repository }}", "tag": "${{ github.event.release.tag_name }}"}'

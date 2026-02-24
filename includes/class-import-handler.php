@@ -104,6 +104,22 @@ class GFCS_Import_Handler
             return; // Let original CSV handler process it
         }
 
+        // Verify the file is actually an XLSX (ZIP with proper structure)
+        if (!$this->validate_xlsx_mime($file_path)) {
+            if (class_exists('GFAsyncUpload')) {
+                GFAsyncUpload::die_error(422, esc_html__('Invalid XLSX file.', 'gf-chained-select-enhancer'));
+            }
+            wp_die(esc_html__('Invalid XLSX file.', 'gf-chained-select-enhancer'), '', array('response' => 422));
+        }
+
+        // Capability check - nonce alone is not authorization
+        if (!current_user_can('gravityforms_edit_forms') && !current_user_can('manage_options')) {
+            if (class_exists('GFAsyncUpload')) {
+                GFAsyncUpload::die_error(403, esc_html__('Permission denied.', 'gravityforms'));
+            }
+            wp_die(esc_html__('Permission denied.', 'gf-chained-select-enhancer'), '', array('response' => 403));
+        }
+
         // Verify nonce
         if (!wp_verify_nonce(rgpost('_gform_file_upload_nonce_' . $form['id']), 'gform_file_upload_' . $form['id'])) {
             if (class_exists('GFAsyncUpload')) {
@@ -144,6 +160,7 @@ class GFCS_Import_Handler
             wp_die(esc_html($json_error), '', array('response' => 422));
         }
 
+        header('Content-Type: application/json; charset=utf-8');
         die($encoded);
     }
 
@@ -240,6 +257,31 @@ class GFCS_Import_Handler
     }
 
     /**
+     * Validate that a file is a genuine XLSX (ZIP archive with expected structure).
+     *
+     * @param string $file_path Path to the file.
+     * @return bool True if valid XLSX.
+     */
+    private function validate_xlsx_mime($file_path)
+    {
+        if (!class_exists('ZipArchive')) {
+            return false;
+        }
+
+        $zip = new ZipArchive();
+        if (true !== $zip->open($file_path, ZipArchive::RDONLY)) {
+            return false;
+        }
+
+        // A valid XLSX must contain [Content_Types].xml and xl/workbook.xml
+        $has_content_types = (false !== $zip->locateName('[Content_Types].xml'));
+        $has_workbook = (false !== $zip->locateName('xl/workbook.xml'));
+        $zip->close();
+
+        return $has_content_types && $has_workbook;
+    }
+
+    /**
      * Sanitize choice value (same as original plugin).
      *
      * @param string $value The value to sanitize.
@@ -247,11 +289,7 @@ class GFCS_Import_Handler
      */
     private function sanitize_choice_value($value)
     {
-        $allowed_protocols = wp_allowed_protocols();
-        $value = wp_kses_no_null($value, array('slash_zero' => 'keep'));
-        $value = wp_kses_hook($value, 'post', $allowed_protocols);
-        $value = wp_kses_split($value, 'post', $allowed_protocols);
-        return $value;
+        return wp_kses($value, 'post');
     }
 
     /**

@@ -104,11 +104,17 @@
             return;
         }
 
-        container.innerHTML = '';
+        while (container.firstChild) {
+            container.removeChild(container.firstChild);
+        }
 
         var columnCount = countColumns(field);
         if (columnCount === 0) {
-            container.innerHTML = '<p style="color: #666; font-style: italic;">No columns found</p>';
+            var noColumnsMsg = document.createElement('p');
+            noColumnsMsg.style.color = '#666';
+            noColumnsMsg.style.fontStyle = 'italic';
+            noColumnsMsg.textContent = 'No columns found';
+            container.appendChild(noColumnsMsg);
             return;
         }
 

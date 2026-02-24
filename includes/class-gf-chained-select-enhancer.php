@@ -176,19 +176,28 @@ JS;
             true
         );
 
+        // Only expose nonce and export settings on GF form editor pages
+        $localize_data = array(
+            'hidden' => __('Hidden', 'gf-chained-select-enhancer'),
+            'visible' => __('Visible', 'gf-chained-select-enhancer'),
+            'selectFieldFirst' => __('Please select a chained select field first', 'gf-chained-select-enhancer'),
+            'exporting' => __('Exporting...', 'gf-chained-select-enhancer'),
+            'exportComplete' => __('Export complete', 'gf-chained-select-enhancer'),
+            'exportFailed' => __('Export failed', 'gf-chained-select-enhancer'),
+        );
+
+        // Only include nonce and ajaxurl on GF form editor pages
+        $screen = function_exists('get_current_screen') ? get_current_screen() : null;
+        $is_gf_page = $screen && (strpos($screen->id, 'gf_edit_forms') !== false || strpos($screen->id, 'gravityforms') !== false);
+        if ($is_gf_page || (isset($_GET['page']) && strpos(sanitize_text_field(wp_unslash($_GET['page'])), 'gf_') === 0)) {
+            $localize_data['nonce'] = wp_create_nonce('gfcs_export_csv');
+            $localize_data['ajaxurl'] = admin_url('admin-ajax.php');
+        }
+
         wp_localize_script(
             'gfcs-admin',
             'gfcsSettings',
-            array(
-                'hidden' => __('Hidden', 'gf-chained-select-enhancer'),
-                'visible' => __('Visible', 'gf-chained-select-enhancer'),
-                'nonce' => wp_create_nonce('gfcs_export_csv'),
-                'ajaxurl' => admin_url('admin-ajax.php'),
-                'selectFieldFirst' => __('Please select a chained select field first', 'gf-chained-select-enhancer'),
-                'exporting' => __('Exporting...', 'gf-chained-select-enhancer'),
-                'exportComplete' => __('Export complete', 'gf-chained-select-enhancer'),
-                'exportFailed' => __('Export failed', 'gf-chained-select-enhancer'),
-            )
+            $localize_data
         );
     }
 
@@ -352,7 +361,7 @@ JS;
             $css = implode(' ', $css_rules);
             // Output CSS in footer to ensure it loads after form
             add_action('wp_footer', function() use ($css) {
-                echo '<style type="text/css">' . $css . '</style>';
+                echo '<style type="text/css">' . wp_strip_all_tags($css) . '</style>';
             }, 100);
         }
 
@@ -474,12 +483,14 @@ JS;
             $field_id,
             gmdate('Y-m-d_His')
         );
+        $filename = sanitize_file_name($filename);
 
         // Stream directly to browser.
         header('Content-Type: text/csv; charset=utf-8');
         header('Content-Disposition: attachment; filename="' . $filename . '"');
         header('Pragma: no-cache');
         header('Expires: 0');
+        header('X-Content-Type-Options: nosniff');
 
         $handle = fopen('php://output', 'w');
         if ($handle) {

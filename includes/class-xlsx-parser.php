@@ -77,9 +77,13 @@ class GFCS_XLSX_Parser
             return $strings;
         }
 
-        // Suppress XML errors and load
+        // Suppress XML errors and load securely (prevent XXE attacks)
         libxml_use_internal_errors(true);
-        $xml = simplexml_load_string($xml_content);
+        if (PHP_VERSION_ID < 80000) {
+            // phpcs:ignore Generic.PHP.DeprecatedFunctions.Deprecated -- Required for PHP < 8.0 XXE protection
+            libxml_disable_entity_loader(true);
+        }
+        $xml = simplexml_load_string($xml_content, 'SimpleXMLElement', LIBXML_NONET | LIBXML_NOENT);
         libxml_clear_errors();
 
         if (false === $xml) {
@@ -119,8 +123,13 @@ class GFCS_XLSX_Parser
      */
     private function parse_sheet($sheet_xml)
     {
+        // Parse securely (prevent XXE attacks)
         libxml_use_internal_errors(true);
-        $xml = simplexml_load_string($sheet_xml);
+        if (PHP_VERSION_ID < 80000) {
+            // phpcs:ignore Generic.PHP.DeprecatedFunctions.Deprecated -- Required for PHP < 8.0 XXE protection
+            libxml_disable_entity_loader(true);
+        }
+        $xml = simplexml_load_string($sheet_xml, 'SimpleXMLElement', LIBXML_NONET | LIBXML_NOENT);
         libxml_clear_errors();
 
         if (false === $xml) {

@@ -2,9 +2,6 @@
 
 Enhances Gravity Forms Chained Selects with auto-select functionality, column hiding options, XLSX import support, and CSV export.
 
-![Plugin Screenshot](https://github.com/guilamu/gf-chained-select-enhancer/blob/main/screenshot.png)
-
-
 ## Auto-Select Features
 
 - Automatically select options when only one choice is available
@@ -92,6 +89,17 @@ Yes, the plugin caches GitHub API responses for 12 hours. Updates are checked au
 ```
 
 ## Changelog
+
+### 1.8.0
+- **Security:** Fixed XXE (XML External Entity) vulnerability in XLSX parser — added `LIBXML_NONET` flag and entity loader protection
+- **Security:** Added authorization capability check (`current_user_can`) to XLSX upload handler — nonce alone is not authorization
+- **Security:** Fixed XSS via unescaped CSS output — now sanitized with `wp_strip_all_tags()`
+- **Security:** Fixed DOM-based XSS in admin JS — replaced `innerHTML` with safe DOM methods
+- **Security:** Replaced internal `wp_kses_hook()`/`wp_kses_split()` calls with public `wp_kses()` API
+- **Security:** Added `Content-Type: application/json` header to XLSX upload JSON response
+- **Security:** Added `sanitize_file_name()` and `X-Content-Type-Options: nosniff` to CSV export
+- **Security:** Added MIME validation for XLSX uploads — verifies ZIP structure before processing
+- **Security:** Nonce and AJAX URL are now only exposed on Gravity Forms editor pages
 
 ### 1.7.2
 - **Fixed:** PHP 7.4 compatibility — replaced `str_ends_with()` (PHP 8+) with `substr()` in GitHub updater

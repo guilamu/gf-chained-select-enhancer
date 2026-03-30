@@ -3,7 +3,7 @@
  * Plugin Name: Chained Select Enhancer for Gravity Forms
  * Plugin URI: https://github.com/guilamu/gf-chained-select-enhancer
  * Description: Enhances Gravity Forms Chained Selects with auto-select functionality, column hiding options, and XLSX file support.
- * Version: 1.8.0
+ * Version: 1.8.1
  * Author: Guilamu
  * Author URI: https://github.com/guilamu
  * Text Domain: gf-chained-select-enhancer
@@ -20,7 +20,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Plugin constants.
-define('GFCS_VERSION', '1.8.0');
+define('GFCS_VERSION', '1.8.1');
 define('GFCS_PLUGIN_FILE', plugin_basename(__FILE__));
 define('GFCS_PLUGIN_PATH', plugin_dir_path(__FILE__));
 define('GFCS_PLUGIN_URL', plugin_dir_url(__FILE__));
@@ -78,6 +78,18 @@ function gfcs_plugin_row_meta(array $links, string $file): array
     if (GFCS_PLUGIN_FILE !== $file) {
         return $links;
     }
+
+    // "View details" thickbox link — same pattern as WordPress.org-hosted plugins.
+    $links[] = sprintf(
+        '<a href="%s" class="thickbox open-plugin-details-modal" aria-label="%s" data-title="%s">%s</a>',
+        esc_url(self_admin_url(
+            'plugin-install.php?tab=plugin-information&plugin=gf-chained-select-enhancer'
+            . '&TB_iframe=true&width=772&height=926'
+        )),
+        esc_attr__('More information about Chained Select Enhancer for Gravity Forms', 'gf-chained-select-enhancer'),
+        esc_attr__('Chained Select Enhancer for Gravity Forms', 'gf-chained-select-enhancer'),
+        esc_html__('View details', 'gf-chained-select-enhancer')
+    );
 
     if (class_exists('Guilamu_Bug_Reporter')) {
         $links[] = sprintf(

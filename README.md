@@ -90,6 +90,9 @@ Yes, the plugin caches GitHub API responses for 12 hours. Updates are checked au
 
 ## Changelog
 
+### 1.8.1
+- **Improved:** Rewrote GitHub auto-updater — View Details popup now reads from local README.md with Parsedown, adds CSS for tables, GF sidebar info, `upgrader_source_selection` folder rename, and full WordPress core update-screen compatibility
+
 ### 1.8.0
 - **Security:** Fixed XXE (XML External Entity) vulnerability in XLSX parser — added `LIBXML_NONET` flag and entity loader protection
 - **Security:** Added authorization capability check (`current_user_can`) to XLSX upload handler — nonce alone is not authorization

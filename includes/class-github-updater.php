@@ -372,7 +372,42 @@ class GFCS_GitHub_Updater {
             return;
         }
 
+        // CSS pattern variables for the banner background.
+        $pattern_css = '--s: 27px;'
+            . '--c1: #b2b2b2;'
+            . '--c2: #ffffff;'
+            . '--c3: #d9d9d9;'
+            . '--_g: var(--c3) 0 120deg, #0000 0;';
+
+        $pattern_bg = 'conic-gradient(from -60deg at 50% calc(100%/3), var(--_g)),'
+            . 'conic-gradient(from 120deg at 50% calc(200%/3), var(--_g)),'
+            . 'conic-gradient(from 60deg at calc(200%/3), var(--c3) 60deg, var(--c2) 0 120deg, #0000 0),'
+            . 'conic-gradient(from 180deg at calc(100%/3), var(--c1) 60deg, var(--_g)),'
+            . 'linear-gradient(90deg, var(--c1) calc(100%/6), var(--c2) 0 50%,'
+            . 'var(--c1) 0 calc(500%/6), var(--c2) 0)';
+
         echo '<style>'
+            . '#plugin-information-title.with-banner {'
+            .   $pattern_css
+            .   'background: ' . $pattern_bg . ' !important;'
+            .   'background-size: calc(1.732 * var(--s)) var(--s) !important;'
+            . '}'
+            . '#plugin-information-title.with-banner h2 {'
+            .   'position: relative;'
+            .   'font-family: "Helvetica Neue", sans-serif;'
+            .   'display: inline-block;'
+            .   'font-size: 30px;'
+            .   'line-height: 1.68;'
+            .   'box-sizing: border-box;'
+            .   'max-width: 100%;'
+            .   'padding: 0 15px;'
+            .   'margin-top: 174px;'
+            .   'color: #fff;'
+            .   'background: rgba(29, 35, 39, 0.9);'
+            .   'text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);'
+            .   'box-shadow: 0 0 30px rgba(255, 255, 255, 0.1);'
+            .   'border-radius: 8px;'
+            . '}'
             . '#section-holder .section h2 { margin: 1.5em 0 0.5em; clear: none; }'
             . '#section-holder .section h3 { margin: 1.5em 0 0.5em; }'
             . '#section-holder .section > :first-child { margin-top: 0; }'
@@ -382,10 +417,15 @@ class GFCS_GitHub_Updater {
             . '.md-th > span { font-weight: 600; background: #f5f5f5; }'
             . '</style>';
 
-        // Gravity Forms add-on: add sidebar line for required GF version.
+        // Gravity Forms add-on: add sidebar line for required GF version
+        // and add the with-banner class to enable the CSS pattern banner.
         $gf_version = esc_html(self::REQUIRES_GF);
         echo '<script>'
             . 'document.addEventListener("DOMContentLoaded",function(){'
+            // Add with-banner class to trigger the CSS pattern background.
+            . 'var title=document.getElementById("plugin-information-title");'
+            . 'if(title){title.classList.add("with-banner");}'
+            // Add Gravity Forms requirement to the sidebar.
             . 'var items=document.querySelectorAll(".fyi ul li");'
             . 'var php=null;'
             . 'for(var i=0;i<items.length;i++){if(items[i].textContent.indexOf("Requires PHP")!==-1){php=items[i];break;}}'

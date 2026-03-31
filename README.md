@@ -90,6 +90,9 @@ Yes, the plugin caches GitHub API responses for 12 hours. Updates are checked au
 
 ## Changelog
 
+### 1.8.2
+- **Improved:** "View details" popup banner — CSS geometric B&W pattern replaces banner image; h2 plugin title styled to match WordPress.org official banner presentation
+
 ### 1.8.1
 - **Improved:** Rewrote GitHub auto-updater — View Details popup now reads from local README.md with Parsedown, adds CSS for tables, GF sidebar info, `upgrader_source_selection` folder rename, and full WordPress core update-screen compatibility
 

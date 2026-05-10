@@ -137,8 +137,217 @@ class GFCS_GitHub_Updater {
     public static function init(): void {
         add_filter('update_plugins_github.com', array(self::class, 'check_for_update'), 10, 4);
         add_filter('plugins_api', array(self::class, 'plugin_info'), 20, 3);
+        add_filter('plugins_api_result', array(self::class, 'finalize_plugin_info'), PHP_INT_MAX, 3);
         add_filter('upgrader_source_selection', array(self::class, 'fix_folder_name'), 10, 4);
         add_action('admin_head', array(self::class, 'plugin_info_css'));
+    }
+
+    /**
+     * Rebuild the final plugin information object after all earlier filters.
+     *
+     * Some sites run additional `plugins_api_result` filters that mutate or
+     * strip fields such as `sections`. Returning a fresh object at the highest
+     * practical priority ensures WordPress core receives the expected shape.
+     *
+     * @param false|object|array $result Plugin API result.
+     * @param string             $action Requested action.
+     * @param object             $args   API arguments.
+     * @return false|object|array
+     */
+    public static function finalize_plugin_info($result, $action, $args) {
+        if (!self::is_plugin_information_api_request($action, $args)) {
+            return $result;
+        }
+
+        return self::get_safe_plugin_info_result();
+    }
+
+    /**
+     * Check whether the current API request is asking for this plugin.
+     *
+     * @param string $action Requested action.
+     * @param mixed  $args   API arguments.
+     * @return bool
+     */
+    private static function is_plugin_information_api_request($action, $args): bool {
+        return 'plugin_information' === $action
+            && is_object($args)
+            && isset($args->slug)
+            && self::PLUGIN_SLUG === $args->slug;
+    }
+
+    /**
+     * Get the active plugin file path relative to the plugins directory.
+     *
+     * @return string
+     */
+    private static function get_plugin_file(): string {
+        if (defined('GFCS_PLUGIN_FILE') && is_string(GFCS_PLUGIN_FILE) && '' !== GFCS_PLUGIN_FILE) {
+            return GFCS_PLUGIN_FILE;
+        }
+
+        return self::PLUGIN_FILE;
+    }
+
+    /**
+     * Get the active plugin directory relative to the plugins directory.
+     *
+     * @return string
+     */
+    private static function get_plugin_directory(): string {
+        return dirname(self::get_plugin_file());
+    }
+
+    /**
+     * Build the plugin information object once and return a fresh clone.
+     *
+     * @return stdClass
+     */
+    private static function get_safe_plugin_info_result(): stdClass {
+        static $plugin_info = null;
+
+        if ($plugin_info instanceof stdClass) {
+            return clone $plugin_info;
+        }
+
+        try {
+            $plugin_info = self::build_plugin_info_result();
+        } catch (Throwable $throwable) {
+            if (defined('WP_DEBUG') && WP_DEBUG) {
+                error_log(sprintf(
+                    '%s plugin details fallback: %s in %s:%d',
+                    self::PLUGIN_NAME,
+                    $throwable->getMessage(),
+                    $throwable->getFile(),
+                    $throwable->getLine()
+                ));
+            }
+
+            $plugin_info = self::build_fallback_plugin_info_result();
+        }
+
+        return clone $plugin_info;
+    }
+
+    /**
+     * Build plugin information for the WordPress details modal.
+     *
+     * @return stdClass
+     */
+    private static function build_plugin_info_result(): stdClass {
+        $release_data = self::get_release_data();
+        $version = $release_data
+            ? ltrim($release_data['tag_name'], 'v')
+            : (defined('GFCS_VERSION') ? GFCS_VERSION : '1.0.0');
+
+        $result               = new stdClass();
+        $result->name         = self::PLUGIN_NAME;
+        $result->slug         = self::PLUGIN_SLUG;
+        $result->plugin       = self::get_plugin_file();
+        $result->version      = $version;
+        $result->author       = sprintf('<a href="https://github.com/%s">%s</a>', self::GITHUB_USER, self::GITHUB_USER);
+        $result->homepage     = sprintf('https://github.com/%s/%s', self::GITHUB_USER, self::GITHUB_REPO);
+        $result->requires     = self::REQUIRES_WP;
+        $result->tested       = get_bloginfo('version');
+        $result->requires_php = self::REQUIRES_PHP;
+        $result->external     = true;
+        $result->banners      = array();
+        $result->icons        = array();
+
+        if ($release_data) {
+            $package_url = self::get_package_url($release_data);
+
+            if ('' !== $package_url) {
+                $result->download_link = $package_url;
+            }
+
+            if (!empty($release_data['published_at'])) {
+                $result->last_updated = $release_data['published_at'];
+            }
+        }
+
+        $result->sections = self::build_plugin_info_sections(self::parse_readme());
+
+        return $result;
+    }
+
+    /**
+     * Build plugin information sections from parsed README content.
+     *
+     * @param array $readme Parsed README sections.
+     * @return array
+     */
+    private static function build_plugin_info_sections(array $readme): array {
+        $sections = array(
+            'description' => !empty($readme['description'])
+                ? $readme['description']
+                : '<p>' . esc_html(self::PLUGIN_DESCRIPTION) . '</p>',
+        );
+
+        if (!empty($readme['installation'])) {
+            $sections['installation'] = $readme['installation'];
+        }
+
+        if (!empty($readme['faq'])) {
+            $sections['faq'] = $readme['faq'];
+        }
+
+        $sections['changelog'] = !empty($readme['changelog'])
+            ? $readme['changelog']
+            : sprintf(
+                '<p>See <a href="https://github.com/%s/%s/releases" target="_blank">GitHub releases</a> for changelog.</p>',
+                esc_attr(self::GITHUB_USER),
+                esc_attr(self::GITHUB_REPO)
+            );
+
+        return $sections;
+    }
+
+    /**
+     * Build a small fallback payload if plugin details generation fails.
+     *
+     * @return stdClass
+     */
+    private static function build_fallback_plugin_info_result(): stdClass {
+        $result               = new stdClass();
+        $result->name         = self::PLUGIN_NAME;
+        $result->slug         = self::PLUGIN_SLUG;
+        $result->plugin       = self::get_plugin_file();
+        $result->version      = defined('GFCS_VERSION') ? GFCS_VERSION : '1.0.0';
+        $result->author       = sprintf('<a href="https://github.com/%s">%s</a>', self::GITHUB_USER, self::GITHUB_USER);
+        $result->homepage     = sprintf('https://github.com/%s/%s', self::GITHUB_USER, self::GITHUB_REPO);
+        $result->requires     = self::REQUIRES_WP;
+        $result->tested       = get_bloginfo('version');
+        $result->requires_php = self::REQUIRES_PHP;
+        $result->external     = true;
+        $result->banners      = array();
+        $result->icons        = array();
+        $result->sections     = array(
+            'description' => '<p>' . esc_html(self::PLUGIN_DESCRIPTION) . '</p>',
+            'changelog'   => sprintf(
+                '<p>See <a href="https://github.com/%s/%s/releases" target="_blank">GitHub releases</a> for changelog.</p>',
+                esc_attr(self::GITHUB_USER),
+                esc_attr(self::GITHUB_REPO)
+            ),
+        );
+
+        return $result;
+    }
+
+    /**
+     * Determine whether the current request is the plugin details iframe for this plugin.
+     *
+     * @return bool
+     */
+    private static function is_plugin_info_request(): bool {
+        if (!isset($_GET['tab'], $_GET['plugin'])) {
+            return false;
+        }
+
+        $tab = sanitize_text_field(wp_unslash($_GET['tab']));
+        $plugin = sanitize_text_field(wp_unslash($_GET['plugin']));
+
+        return 'plugin-information' === $tab && self::PLUGIN_SLUG === $plugin;
     }
 
     /**
@@ -234,7 +443,7 @@ class GFCS_GitHub_Updater {
      */
     public static function check_for_update($update, array $plugin_data, string $plugin_file, $locales) {
         // Verify this is our plugin.
-        if (self::PLUGIN_FILE !== $plugin_file) {
+        if (self::get_plugin_file() !== $plugin_file) {
             return $update;
         }
 
@@ -260,7 +469,7 @@ class GFCS_GitHub_Updater {
         return array(
             'id'            => 'github.com/' . self::GITHUB_USER . '/' . self::GITHUB_REPO,
             'slug'          => self::PLUGIN_SLUG,
-            'plugin'        => self::PLUGIN_FILE,
+            'plugin'        => self::get_plugin_file(),
             'new_version'   => $new_version,
             'version'       => $new_version,
             'package'       => self::get_package_url($release_data),
@@ -286,70 +495,11 @@ class GFCS_GitHub_Updater {
      * @return false|object Plugin information or false.
      */
     public static function plugin_info($res, $action, $args) {
-        if ('plugin_information' !== $action) {
+        if (!self::is_plugin_information_api_request($action, $args)) {
             return $res;
         }
 
-        if (!isset($args->slug) || self::PLUGIN_SLUG !== $args->slug) {
-            return $res;
-        }
-
-        $plugin_file = WP_PLUGIN_DIR . '/' . self::PLUGIN_FILE;
-        $plugin_data = get_plugin_data($plugin_file, false, false);
-        $release_data = self::get_release_data();
-
-        $version = $release_data
-            ? ltrim($release_data['tag_name'], 'v')
-            : ($plugin_data['Version'] ?? '1.0.0');
-
-        // IMPORTANT: Always return a valid stdClass to prevent WordPress from
-        // falling back to WordPress.org API (which fails with "Plugin not found"
-        // for custom/GitHub-hosted plugins).
-        $res               = new stdClass();
-        $res->name         = self::PLUGIN_NAME;
-        $res->slug         = self::PLUGIN_SLUG;
-        $res->plugin       = self::PLUGIN_FILE;
-        $res->version      = $version;
-        $res->author       = sprintf('<a href="https://github.com/%s">%s</a>', self::GITHUB_USER, self::GITHUB_USER);
-        $res->homepage     = sprintf('https://github.com/%s/%s', self::GITHUB_USER, self::GITHUB_REPO);
-        $res->requires     = self::REQUIRES_WP;
-        $res->tested       = get_bloginfo('version');
-        $res->requires_php = self::REQUIRES_PHP;
-
-        if ($release_data) {
-            $res->download_link = self::get_package_url($release_data);
-            $res->last_updated  = $release_data['published_at'] ?? '';
-        }
-
-        // Build sections from local README.md.
-        // Only add tabs whose content is non-empty — WordPress displays
-        // a tab for every key present in the sections array, so omitting
-        // a key hides the tab entirely.
-        $readme = self::parse_readme();
-
-        $res->sections = array(
-            'description' => !empty($readme['description'])
-                ? $readme['description']
-                : '<p>' . esc_html(self::PLUGIN_DESCRIPTION) . '</p>',
-        );
-
-        if (!empty($readme['installation'])) {
-            $res->sections['installation'] = $readme['installation'];
-        }
-
-        if (!empty($readme['faq'])) {
-            $res->sections['faq'] = $readme['faq'];
-        }
-
-        $res->sections['changelog'] = !empty($readme['changelog'])
-            ? $readme['changelog']
-            : sprintf(
-                '<p>See <a href="https://github.com/%s/%s/releases" target="_blank">GitHub releases</a> for changelog.</p>',
-                esc_attr(self::GITHUB_USER),
-                esc_attr(self::GITHUB_REPO)
-            );
-
-        return $res;
+        return self::get_safe_plugin_info_result();
     }
 
     /**
@@ -453,7 +603,7 @@ class GFCS_GitHub_Updater {
      * @return array{description: string, installation: string, faq: string, changelog: string}
      */
     private static function parse_readme(): array {
-        $readme_path = WP_PLUGIN_DIR . '/' . dirname(self::PLUGIN_FILE) . '/README.md';
+        $readme_path = WP_PLUGIN_DIR . '/' . self::get_plugin_directory() . '/README.md';
 
         if (!file_exists($readme_path)) {
             return array();
@@ -527,7 +677,28 @@ class GFCS_GitHub_Updater {
         $markdown = preg_replace('/!\[[^\]]*\]\([^\)]+\)/', '', $markdown);
 
         if (!class_exists('Parsedown')) {
-            require_once __DIR__ . '/Parsedown.php';
+            $parsedown_path = __DIR__ . '/Parsedown.php';
+
+            if (!file_exists($parsedown_path)) {
+                error_log(sprintf(
+                    '%s plugin details fallback: missing Parsedown.php at %s',
+                    self::PLUGIN_NAME,
+                    $parsedown_path
+                ));
+
+                return wpautop(esc_html($markdown));
+            }
+
+            require_once $parsedown_path;
+        }
+
+        if (!class_exists('Parsedown')) {
+            error_log(sprintf(
+                '%s plugin details fallback: Parsedown class unavailable after load',
+                self::PLUGIN_NAME
+            ));
+
+            return wpautop(esc_html($markdown));
         }
 
         $parsedown = new Parsedown();
@@ -607,12 +778,12 @@ class GFCS_GitHub_Updater {
         }
 
         // Check if this is our plugin.
-        if (self::PLUGIN_FILE !== $hook_extra['plugin']) {
+        if (self::get_plugin_file() !== $hook_extra['plugin']) {
             return $source;
         }
 
         // Expected folder name (extract from PLUGIN_FILE).
-        $correct_folder = dirname(self::PLUGIN_FILE);
+        $correct_folder = self::get_plugin_directory();
 
         // Get the current folder name from source path.
         $source_folder = basename(untrailingslashit($source));

@@ -1,0 +1,87 @@
+name: 📦 Draft Release from Changelog
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['README.md']
+
+permissions:
+  contents: write
+
+jobs:
+  draft-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Parse changelog from README.md
+        id: changelog
+        run: |
+          python3 - <<'PYEOF'
+          import re, os, sys
+
+          with open("README.md", "r", encoding="utf-8") as f:
+              content = f.read()
+
+          # Find the ## Changelog section
+          changelog_block = re.search(
+              r'## Changelog\s+(.*?)(?=\n## |\Z)',
+              content,
+              re.DOTALL
+          )
+          if not changelog_block:
+              sys.exit("❌ No '## Changelog' section found in README.md")
+
+          # Find the first ### X.Y.Z entry (with optional date suffix like " - 2026-04-03")
+          version_match = re.search(
+              r'### (\d+\.\d+(?:\.\d+)*)(?:\s*-\s*\d{4}-\d{2}-\d{2})?\s*\n(.*?)(?=\n### |\Z)',
+              changelog_block.group(1),
+              re.DOTALL
+          )
+          if not version_match:
+              sys.exit("❌ No version entry (### X.Y.Z) found in Changelog")
+
+          version = version_match.group(1).strip()
+          notes   = version_match.group(2).strip()
+
+          # Write notes to a temp file (avoids multiline quoting issues)
+          with open("/tmp/release_notes.md", "w", encoding="utf-8") as nf:
+              nf.write(notes)
+
+          # Write version to GITHUB_OUTPUT
+          with open(os.environ["GITHUB_OUTPUT"], "a") as out:
+              out.write(f"version={version}\n")
+
+          print(f"✅ Version : {version}")
+          print(f"📝 Notes   :\n{notes}")
+          PYEOF
+
+      - name: Check if release already exists
+        id: check
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="v${{ steps.changelog.outputs.version }}"
+          if gh release view "$TAG" &>/dev/null; then
+            echo "⚠️ Release $TAG already exists — skipping."
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+
+      - name: Create draft release
+        if: steps.check.outputs.skip == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ steps.check.outputs.tag }}" \
+            --draft \
+            --title "${{ steps.check.outputs.tag }}" \
+            --notes-file /tmp/release_notes.md
+
+          echo "✅ Draft release ${{ steps.check.outputs.tag }} created!"
+          echo "🔗 $(gh release view ${{ steps.check.outputs.tag }} --json url -q .url)"

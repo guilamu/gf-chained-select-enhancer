@@ -90,6 +90,9 @@ Yes, the plugin caches GitHub API responses for 12 hours. Updates are checked au
 
 ## Changelog
 
+### 1.8.3
+- **Fixed:** "View details" popup no longer fails with "Plugin not found" on sites where another plugin mutates the `plugins_api_result` payload
+
 ### 1.8.2
 - **Improved:** "View details" popup banner — CSS geometric B&W pattern replaces banner image; h2 plugin title styled to match WordPress.org official banner presentation
 

@@ -826,6 +826,38 @@
         select.appendChild(option);
     }
 
+    function positionSubLabelWidthSetting() {
+        var anchor = document.querySelector('.sub_label_placement_setting');
+        var setting = document.querySelector('.gfcs_sub_label_width_setting');
+
+        if (!anchor || !setting || setting.previousElementSibling === anchor) {
+            return;
+        }
+
+        anchor.insertAdjacentElement('afterend', setting);
+    }
+
+    function normalizeSubLabelWidthRatio(value) {
+        if (value === '1-1' || value === '2-1') {
+            return value;
+        }
+
+        return '1-2';
+    }
+
+    function applySubLabelWidthRatioPreview(field, inputContainer) {
+        var ratio;
+
+        if (!inputContainer) {
+            return;
+        }
+
+        ratio = normalizeSubLabelWidthRatio(field && field.gfcsSubLabelRatio);
+
+        inputContainer.classList.toggle('gfcs-sub-label-ratio-half', ratio === '1-1');
+        inputContainer.classList.toggle('gfcs-sub-label-ratio-label-wide', ratio === '2-1');
+    }
+
     function getEffectiveSubLabelPlacement(field) {
         if (!field) {
             return '';
@@ -836,6 +868,22 @@
         }
 
         return typeof form !== 'undefined' && form ? form.subLabelPlacement || '' : '';
+    }
+
+    function refreshSubLabelWidthSetting(field) {
+        var select = document.getElementById('field_gfcs_sub_label_width');
+        var setting = document.querySelector('.gfcs_sub_label_width_setting');
+        var isLeftPlacement = getEffectiveSubLabelPlacement(field) === 'left';
+
+        positionSubLabelWidthSetting();
+
+        if (select) {
+            select.value = normalizeSubLabelWidthRatio(field && field.gfcsSubLabelRatio);
+        }
+
+        if (setting) {
+            setting.style.display = isLeftPlacement ? '' : 'none';
+        }
     }
 
     function refreshSubLabelPlacementPreview(field) {
@@ -891,6 +939,7 @@
 
         inputContainer.innerHTML = markup;
         inputContainer.classList.toggle('gfcs-sub-label-left', placement === 'left');
+        applySubLabelWidthRatioPreview(field, inputContainer);
     }
 
     function applySubLabelPlacementPreview(field) {
@@ -906,6 +955,7 @@
         }
 
         inputContainer.classList.toggle('gfcs-sub-label-left', getEffectiveSubLabelPlacement(field) === 'left');
+        applySubLabelWidthRatioPreview(field, inputContainer);
     }
 
     function exportCurrentField(event) {
@@ -1003,17 +1053,21 @@
         };
 
         ensureLeftSubLabelOption();
+        positionSubLabelWidthSetting();
 
         $(document).on('gform_load_field_settings', function (event, field) {
             if (isChainedSelectField(field)) {
                 refreshColumnManagerState(field);
                 ensureLeftSubLabelOption();
+                refreshSubLabelWidthSetting(field);
                 $('#field_auto_select').prop('checked', field.autoSelectOnly === true);
                 $('#field_full_width').prop('checked', field.fullWidth === true);
                 $('#field_hide_columns').val(field.hideColumns || '');
                 $('#field_column_sections').val(field.columnSections || '');
                 if (field.subLabelPlacement === 'left') {
                     $('#field_sub_label_placement').val('left');
+                } else if (!field.subLabelPlacement) {
+                    $('#field_sub_label_placement').val('');
                 }
                 renderColumnToggles(field);
                 updateFullWidthPreview(field.id, field.fullWidth === true);
@@ -1029,6 +1083,18 @@
             }
 
             field.subLabelPlacement = this.value;
+            refreshSubLabelWidthSetting(field);
+            refreshSubLabelPlacementPreview(field);
+        });
+
+        $(document).on('change', '#field_gfcs_sub_label_width', function () {
+            var field = typeof GetSelectedField === 'function' ? GetSelectedField() : null;
+
+            if (!isChainedSelectField(field)) {
+                return;
+            }
+
+            field.gfcsSubLabelRatio = normalizeSubLabelWidthRatio(this.value);
             refreshSubLabelPlacementPreview(field);
         });
 

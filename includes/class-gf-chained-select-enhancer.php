@@ -273,6 +273,16 @@ JS;
                 <?php esc_html_e('Make vertical chained select full width', 'gf-chained-select-enhancer'); ?>
             </label>
         </li>
+        <li class="gfcs_sub_label_width_setting field_setting">
+            <label for="field_gfcs_sub_label_width" class="section_label">
+                <?php esc_html_e('Left sub-label width', 'gf-chained-select-enhancer'); ?>
+            </label>
+            <select id="field_gfcs_sub_label_width" onchange="SetFieldProperty('gfcsSubLabelRatio', this.value);">
+                <option value="1-2"><?php esc_html_e('1/3 label, 2/3 field', 'gf-chained-select-enhancer'); ?></option>
+                <option value="1-1"><?php esc_html_e('1/2 label, 1/2 field', 'gf-chained-select-enhancer'); ?></option>
+                <option value="2-1"><?php esc_html_e('2/3 label, 1/3 field', 'gf-chained-select-enhancer'); ?></option>
+            </select>
+        </li>
         <li class="hide_columns_setting field_setting">
             <label for="field_hide_columns" class="inline" style="display: block; margin-bottom: 5px;">
                 <?php esc_html_e('Manage Columns', 'gf-chained-select-enhancer'); ?>
@@ -304,7 +314,7 @@ JS;
             // Register field settings with Gravity Forms editor
             // This must be inline as it needs to execute at the correct GF initialization time
             if (typeof fieldSettings !== 'undefined') {
-                fieldSettings.chainedselect += ', .auto_select_setting, .hide_columns_setting, .full_width_setting, .csv_export_setting';
+                fieldSettings.chainedselect += ', .auto_select_setting, .hide_columns_setting, .full_width_setting, .gfcs_sub_label_width_setting, .csv_export_setting';
             }
 
             (function($) {
@@ -321,7 +331,19 @@ JS;
                     }).appendTo($select);
                 }
 
-                $(gfcsEnsureLeftSubLabelOption);
+                function gfcsPositionSubLabelWidthSetting() {
+                    var $setting = $('.gfcs_sub_label_width_setting');
+                    var $anchor = $('.sub_label_placement_setting');
+
+                    if ($setting.length && $anchor.length) {
+                        $setting.insertAfter($anchor.first());
+                    }
+                }
+
+                $(function() {
+                    gfcsEnsureLeftSubLabelOption();
+                    gfcsPositionSubLabelWidthSetting();
+                });
 
                 $(document).on('gform_load_field_settings', function(event, field) {
                     if (!field || (field.type !== 'chainedselect' && field.type !== 'chained_select')) {
@@ -329,6 +351,7 @@ JS;
                     }
 
                     gfcsEnsureLeftSubLabelOption();
+                    gfcsPositionSubLabelWidthSetting();
 
                     if (field.subLabelPlacement === 'left') {
                         $('#field_sub_label_placement').val('left');
@@ -361,16 +384,13 @@ JS;
             $field_content = str_replace('<select', '<select data-auto-select-only="true"', $field_content);
         }
 
-        if (
-            $this->is_left_sub_label_placement($field, (int) $form_id)
-            && false === strpos($field_content, 'gfcs-sub-label-left')
-        ) {
-            $field_content = preg_replace(
-                '/(<div[^>]*class=)(["\'])([^"\']*\bginput_chained_selects_container\b[^"\']*)(["\'])/i',
-                '$1$2$3 gfcs-sub-label-left$4',
-                $field_content,
-                1
-            );
+        if ($this->is_left_sub_label_placement($field, (int) $form_id)) {
+            $field_content = $this->add_chained_select_container_class($field_content, 'gfcs-sub-label-left');
+
+            $ratio_class = $this->get_sub_label_width_ratio_class($field);
+            if ('' !== $ratio_class) {
+                $field_content = $this->add_chained_select_container_class($field_content, $ratio_class);
+            }
         }
 
         $field_content = $this->inject_column_sections_markup($field_content, $field, (int) $form_id);
@@ -422,6 +442,70 @@ JS;
         }
 
         return 'left' === $form_sub_label_placements[$form_id];
+    }
+
+    /**
+     * Add a CSS class to the chained select container.
+     *
+     * @param string $field_content Field HTML content.
+     * @param string $class_name    CSS class to inject.
+     * @return string
+     */
+    private function add_chained_select_container_class(string $field_content, string $class_name): string
+    {
+        if ('' === $class_name || false !== strpos($field_content, $class_name)) {
+            return $field_content;
+        }
+
+        $updated_content = preg_replace(
+            '/(<div[^>]*class=)(["\'])([^"\']*\bginput_chained_selects_container\b[^"\']*)(["\'])/i',
+            '$1$2$3 ' . $class_name . '$4',
+            $field_content,
+            1
+        );
+
+        return is_string($updated_content) ? $updated_content : $field_content;
+    }
+
+    /**
+     * Get the normalized left sub-label width ratio.
+     *
+     * @param object $field Field object.
+     * @return string
+     */
+    private function get_sub_label_width_ratio($field): string
+    {
+        if (!is_object($field) || !isset($field->gfcsSubLabelRatio)) {
+            return '1-2';
+        }
+
+        $ratio = sanitize_key((string) $field->gfcsSubLabelRatio);
+
+        if (in_array($ratio, array('1-2', '1-1', '2-1'), true)) {
+            return $ratio;
+        }
+
+        return '1-2';
+    }
+
+    /**
+     * Resolve the CSS class for the configured left sub-label width.
+     *
+     * @param object $field Field object.
+     * @return string
+     */
+    private function get_sub_label_width_ratio_class($field): string
+    {
+        switch ($this->get_sub_label_width_ratio($field)) {
+            case '1-1':
+                return 'gfcs-sub-label-ratio-half';
+
+            case '2-1':
+                return 'gfcs-sub-label-ratio-label-wide';
+
+            default:
+                return '';
+        }
     }
 
     /**

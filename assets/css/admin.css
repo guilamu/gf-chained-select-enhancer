@@ -371,12 +371,24 @@
     max-inline-size: 100% !important;
 }
 
+.gform_editor .ginput_chained_selects_container.gfcs-sub-label-left {
+    --gfcs-sub-label-columns: minmax(0, 1fr) minmax(0, 2fr);
+}
+
+.gform_editor .ginput_chained_selects_container.gfcs-sub-label-left.gfcs-sub-label-ratio-half {
+    --gfcs-sub-label-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.gform_editor .ginput_chained_selects_container.gfcs-sub-label-left.gfcs-sub-label-ratio-label-wide {
+    --gfcs-sub-label-columns: minmax(0, 2fr) minmax(0, 1fr);
+}
+
 /* Left sub-label placement preview */
 .gform_editor .ginput_chained_selects_container.gfcs-sub-label-left > .gform-grid-col {
     align-items: center;
     column-gap: 1.25rem;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+    grid-template-columns: var(--gfcs-sub-label-columns);
     inline-size: 100%;
     padding-block: 0 0.25rem;
     padding-inline: 0;

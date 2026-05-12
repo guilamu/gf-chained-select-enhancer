@@ -192,6 +192,10 @@ msgid "\ud83d\udc1b Report a Bug (install Bug Reporter)"
 msgstr ""
 
 #: includes/class-import-handler.php
+msgid "Invalid XLSX file."
+msgstr ""
+
+#: includes/class-import-handler.php
 msgid "Permission denied."
 msgstr ""
 
@@ -225,4 +229,8 @@ msgstr ""
 
 #: includes/class-xlsx-parser.php
 msgid "Failed to parse worksheet XML."
+msgstr ""
+
+#: includes/class-github-updater.php
+msgid "Unable to rename the update folder. Please retry or update manually."
 msgstr ""

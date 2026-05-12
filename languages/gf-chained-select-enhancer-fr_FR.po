@@ -3,7 +3,7 @@ msgstr ""
 "Project-Id-Version: Chained Select Enhancer for Gravity Forms 1.9.0\n"
 "Report-Msgid-Bugs-To: https://github.com/guilamu/gf-chained-select-enhancer\n"
 "POT-Creation-Date: 2026-02-05 12:00+0000\n"
-"PO-Revision-Date: 2026-05-12 22:00+0200\n"
+"PO-Revision-Date: 2026-05-12 22:24+0200\n"
 "Last-Translator: Guilamu <guilamu@gmail.com>\n"
 "Language-Team: French\n"
 "Language: fr_FR\n"
@@ -194,6 +194,10 @@ msgid "\\ud83d\\udc1b Report a Bug (install Bug Reporter)"
 msgstr "\\ud83d\\udc1b Signaler un bug (installer Bug Reporter)"
 
 #: includes/class-import-handler.php
+msgid "Invalid XLSX file."
+msgstr "Fichier XLSX invalide."
+
+#: includes/class-import-handler.php
 msgid "Permission denied."
 msgstr "Accès refusé."
 
@@ -228,3 +232,7 @@ msgstr "Aucune feuille de calcul trouvée dans le fichier XLSX."
 #: includes/class-xlsx-parser.php
 msgid "Failed to parse worksheet XML."
 msgstr "Impossible d'analyser le XML de la feuille de calcul."
+
+#: includes/class-github-updater.php
+msgid "Unable to rename the update folder. Please retry or update manually."
+msgstr "Impossible de renommer le dossier de mise à jour. Veuillez réessayer ou effectuer la mise à jour manuellement."

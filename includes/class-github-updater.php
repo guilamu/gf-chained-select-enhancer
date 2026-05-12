@@ -236,9 +236,17 @@ class GFCS_GitHub_Updater {
      */
     private static function build_plugin_info_result(): stdClass {
         $release_data = self::get_release_data();
-        $version = $release_data
+        $installed_version = defined('GFCS_VERSION') ? GFCS_VERSION : '1.0.0';
+        $release_version = $release_data
             ? ltrim($release_data['tag_name'], 'v')
-            : (defined('GFCS_VERSION') ? GFCS_VERSION : '1.0.0');
+            : '';
+        $version = $installed_version;
+        $has_update = '' !== $release_version
+            && version_compare($release_version, $installed_version, '>');
+
+        if ($has_update) {
+            $version = $release_version;
+        }
 
         $result               = new stdClass();
         $result->name         = self::PLUGIN_NAME;
@@ -254,7 +262,7 @@ class GFCS_GitHub_Updater {
         $result->banners      = array();
         $result->icons        = array();
 
-        if ($release_data) {
+        if ($release_data && $has_update) {
             $package_url = self::get_package_url($release_data);
 
             if ('' !== $package_url) {
@@ -266,7 +274,12 @@ class GFCS_GitHub_Updater {
             }
         }
 
-        $result->sections = self::build_plugin_info_sections(self::parse_readme());
+        $result->sections = self::build_plugin_info_sections(
+            self::parse_readme(),
+            $release_data,
+            $installed_version,
+            $version
+        );
 
         return $result;
     }
@@ -274,10 +287,18 @@ class GFCS_GitHub_Updater {
     /**
      * Build plugin information sections from parsed README content.
      *
-     * @param array $readme Parsed README sections.
+     * @param array      $readme            Parsed README sections.
+     * @param array|null $release_data      Release data from GitHub.
+     * @param string     $installed_version Installed plugin version.
+     * @param string     $display_version   Version shown in the modal.
      * @return array
      */
-    private static function build_plugin_info_sections(array $readme): array {
+    private static function build_plugin_info_sections(
+        array $readme,
+        ?array $release_data,
+        string $installed_version,
+        string $display_version
+    ): array {
         $sections = array(
             'description' => !empty($readme['description'])
                 ? $readme['description']
@@ -292,8 +313,23 @@ class GFCS_GitHub_Updater {
             $sections['faq'] = $readme['faq'];
         }
 
-        $sections['changelog'] = !empty($readme['changelog'])
-            ? $readme['changelog']
+        $changelog_html = '';
+
+        if (
+            is_array($release_data)
+            && !empty($release_data['body'])
+            && version_compare($installed_version, $display_version, '<')
+        ) {
+            $changelog_html .= '<h4>' . esc_html($display_version) . '</h4>'
+                . self::markdown_to_html((string) $release_data['body']);
+        }
+
+        if (!empty($readme['changelog'])) {
+            $changelog_html .= $readme['changelog'];
+        }
+
+        $sections['changelog'] = !empty($changelog_html)
+            ? $changelog_html
             : sprintf(
                 '<p>See <a href="https://github.com/%s/%s/releases" target="_blank">GitHub releases</a> for changelog.</p>',
                 esc_attr(self::GITHUB_USER),
@@ -660,7 +696,8 @@ class GFCS_GitHub_Updater {
      * Convert Markdown to HTML using Parsedown.
      *
      * Images are stripped before conversion since they are not useful
-     * inside the WordPress plugin-information modal.
+    * inside the WordPress plugin-information modal. This includes both
+    * Markdown image syntax and raw HTML <img> blocks often used for README logos.
      *
      * IMPORTANT: WordPress install_plugin_information() sanitizes section
      * content with wp_kses() using $plugins_allowedtags — which does NOT
@@ -675,6 +712,8 @@ class GFCS_GitHub_Updater {
 
         // Remove images (not useful in the modal).
         $markdown = preg_replace('/!\[[^\]]*\]\([^\)]+\)/', '', $markdown);
+        $markdown = preg_replace('/<p\b[^>]*>\s*(?:(?:<a\b[^>]*>\s*)?<img\b[^>]*>\s*(?:<\/a>\s*)?)+<\/p>\s*/is', '', $markdown);
+        $markdown = preg_replace('/(?:<a\b[^>]*>\s*)?<img\b[^>]*>\s*(?:<\/a>)?/i', '', $markdown);
 
         if (!class_exists('Parsedown')) {
             $parsedown_path = __DIR__ . '/Parsedown.php';

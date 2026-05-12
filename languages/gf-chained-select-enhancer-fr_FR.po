@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: Chained Select Enhancer for Gravity Forms 1.8.3\n"
+"Project-Id-Version: Chained Select Enhancer for Gravity Forms 1.9.0\n"
 "Report-Msgid-Bugs-To: https://github.com/guilamu/gf-chained-select-enhancer\n"
 "POT-Creation-Date: 2026-02-05 12:00+0000\n"
-"PO-Revision-Date: 2026-03-31 16:52+0200\n"
+"PO-Revision-Date: 2026-05-12 17:45+0200\n"
 "Last-Translator: Guilamu <guilamu@gmail.com>\n"
 "Language-Team: French\n"
 "Language: fr_FR\n"
@@ -38,6 +38,10 @@ msgid "Make vertical chained select full width"
 msgstr "Affiche en pleine largeur si chained select vertical"
 
 #: includes/class-gf-chained-select-enhancer.php
+msgid "Manage Columns"
+msgstr "Gérer les colonnes"
+
+#: includes/class-gf-chained-select-enhancer.php
 msgid "Hide Columns"
 msgstr "Masquer les colonnes"
 
@@ -52,6 +56,74 @@ msgstr "Masqué"
 #: includes/class-gf-chained-select-enhancer.php
 msgid "Visible"
 msgstr "Visible"
+
+#: includes/class-gf-chained-select-enhancer.php
+msgid "To the left of the field"
+msgstr "À gauche du champ"
+
+#: includes/class-gf-chained-select-enhancer.php
+msgid "No columns found"
+msgstr "Aucune colonne trouvée"
+
+#: includes/class-gf-chained-select-enhancer.php
+msgid "Section before this column"
+msgstr "Section avant cette colonne"
+
+#: includes/class-gf-chained-select-enhancer.php
+msgid "Leave empty if no section starts here"
+msgstr "Laisser vide si aucune section ne commence ici"
+
+#: includes/class-gf-chained-select-enhancer.php
+msgid "column"
+msgstr "colonne"
+
+#: includes/class-gf-chained-select-enhancer.php
+msgid "columns"
+msgstr "colonnes"
+
+#: includes/class-gf-chained-select-enhancer.php
+msgid "hidden"
+msgstr "masquée"
+
+#: includes/class-gf-chained-select-enhancer.php
+msgid "hidden column"
+msgstr "masquée"
+
+#: includes/class-gf-chained-select-enhancer.php
+msgid "hidden columns"
+msgstr "masquées"
+
+#: includes/class-gf-chained-select-enhancer.php
+msgid "Section"
+msgstr "Section"
+
+#: includes/class-gf-chained-select-enhancer.php
+msgid "New Section"
+msgstr "Nouvelle section"
+
+#: includes/class-gf-chained-select-enhancer.php
+msgid "Add a section"
+msgstr "Ajouter une section"
+
+#: includes/class-gf-chained-select-enhancer.php
+msgid "Drop columns here"
+msgstr "Déposer des colonnes ici"
+
+#: includes/class-gf-chained-select-enhancer.php
+msgid "Rename section"
+msgstr "Renommer la section"
+
+#: includes/class-gf-chained-select-enhancer.php
+msgid "Collapse section"
+msgstr "Replier la section"
+
+#: includes/class-gf-chained-select-enhancer.php
+msgid "Expand section"
+msgstr "Déplier la section"
+
+#: includes/class-gf-chained-select-enhancer.php
+msgid "Reorder column"
+msgstr "Réorganiser la colonne"
 
 #: includes/class-gf-chained-select-enhancer.php
 msgid "Please select a chained select field first"

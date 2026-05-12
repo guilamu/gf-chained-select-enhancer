@@ -74,6 +74,7 @@ class GFCS_Chained_Select_Enhancer
         add_action('gform_field_standard_settings', array($this, 'add_field_settings'), 10, 2);
         add_action('gform_editor_js', array($this, 'editor_script'));
         add_action('admin_enqueue_scripts', array($this, 'enqueue_admin_assets'));
+        add_action('wp_enqueue_scripts', array($this, 'enqueue_frontend_assets'));
 
         // Frontend hooks.
         add_filter('gform_field_content', array($this, 'add_auto_select_property'), 10, 5);
@@ -161,18 +162,25 @@ JS;
      */
     public function enqueue_admin_assets(): void
     {
+        $admin_css_version = file_exists($this->plugin_path . 'assets/css/admin.css')
+            ? (string) filemtime($this->plugin_path . 'assets/css/admin.css')
+            : $this->version;
+        $admin_js_version = file_exists($this->plugin_path . 'assets/js/admin.js')
+            ? (string) filemtime($this->plugin_path . 'assets/js/admin.js')
+            : $this->version;
+
         wp_enqueue_style(
             'gfcs-admin',
             $this->plugin_url . 'assets/css/admin.css',
             array(),
-            $this->version
+            $admin_css_version
         );
 
         wp_enqueue_script(
             'gfcs-admin',
             $this->plugin_url . 'assets/js/admin.js',
             array('jquery'),
-            $this->version,
+            $admin_js_version,
             true
         );
 
@@ -180,6 +188,22 @@ JS;
         $localize_data = array(
             'hidden' => __('Hidden', 'gf-chained-select-enhancer'),
             'visible' => __('Visible', 'gf-chained-select-enhancer'),
+            'leftOfField' => __('To the left of the field', 'gf-chained-select-enhancer'),
+            'noColumnsFound' => __('No columns found', 'gf-chained-select-enhancer'),
+            'sectionBeforeColumn' => __('Section before this column', 'gf-chained-select-enhancer'),
+            'sectionTitlePlaceholder' => __('Leave empty if no section starts here', 'gf-chained-select-enhancer'),
+            'columnSingular' => __('column', 'gf-chained-select-enhancer'),
+            'columnPlural' => __('columns', 'gf-chained-select-enhancer'),
+            'hiddenColumnSingular' => __('hidden column', 'gf-chained-select-enhancer'),
+            'hiddenColumnPlural' => __('hidden columns', 'gf-chained-select-enhancer'),
+            'untitledSection' => __('Section', 'gf-chained-select-enhancer'),
+            'newSectionTitle' => __('New Section', 'gf-chained-select-enhancer'),
+            'addSection' => __('Add a section', 'gf-chained-select-enhancer'),
+            'dropColumnsHere' => __('Drop columns here', 'gf-chained-select-enhancer'),
+            'renameSection' => __('Rename section', 'gf-chained-select-enhancer'),
+            'collapseSection' => __('Collapse section', 'gf-chained-select-enhancer'),
+            'expandSection' => __('Expand section', 'gf-chained-select-enhancer'),
+            'reorderColumn' => __('Reorder column', 'gf-chained-select-enhancer'),
             'selectFieldFirst' => __('Please select a chained select field first', 'gf-chained-select-enhancer'),
             'exporting' => __('Exporting...', 'gf-chained-select-enhancer'),
             'exportComplete' => __('Export complete', 'gf-chained-select-enhancer'),
@@ -198,6 +222,29 @@ JS;
             'gfcs-admin',
             'gfcsSettings',
             $localize_data
+        );
+    }
+
+    /**
+     * Enqueue frontend assets.
+     *
+     * @return void
+     */
+    public function enqueue_frontend_assets(): void
+    {
+        if (is_admin()) {
+            return;
+        }
+
+        $frontend_css_version = file_exists($this->plugin_path . 'assets/css/frontend.css')
+            ? (string) filemtime($this->plugin_path . 'assets/css/frontend.css')
+            : $this->version;
+
+        wp_enqueue_style(
+            'gfcs-frontend',
+            $this->plugin_url . 'assets/css/frontend.css',
+            array(),
+            $frontend_css_version
         );
     }
 
@@ -228,10 +275,11 @@ JS;
         </li>
         <li class="hide_columns_setting field_setting">
             <label for="field_hide_columns" class="inline" style="display: block; margin-bottom: 5px;">
-                <?php esc_html_e('Hide Columns', 'gf-chained-select-enhancer'); ?>
+                <?php esc_html_e('Manage Columns', 'gf-chained-select-enhancer'); ?>
             </label>
             <div id="gfcs_column_toggles" class="gfcs-toggle-switches"></div>
             <input type="hidden" id="field_hide_columns" onchange="SetFieldProperty('hideColumns', this.value);" />
+            <input type="hidden" id="field_column_sections" onchange="SetFieldProperty('columnSections', this.value);" />
         </li>
         <li class="csv_export_setting field_setting">
             <button type="button" id="gfcs_export_csv_btn" class="button button-large" style="width: 100%; text-align: center;"
@@ -250,6 +298,7 @@ JS;
      */
     public function editor_script(): void
     {
+        $left_of_field = esc_html__('To the left of the field', 'gf-chained-select-enhancer');
         ?>
         <script type='text/javascript'>
             // Register field settings with Gravity Forms editor
@@ -257,6 +306,35 @@ JS;
             if (typeof fieldSettings !== 'undefined') {
                 fieldSettings.chainedselect += ', .auto_select_setting, .hide_columns_setting, .full_width_setting, .csv_export_setting';
             }
+
+            (function($) {
+                function gfcsEnsureLeftSubLabelOption() {
+                    var $select = $('#field_sub_label_placement');
+
+                    if (!$select.length || $select.find('option[value="left"]').length) {
+                        return;
+                    }
+
+                    $('<option />', {
+                        value: 'left',
+                        text: <?php echo wp_json_encode($left_of_field); ?>
+                    }).appendTo($select);
+                }
+
+                $(gfcsEnsureLeftSubLabelOption);
+
+                $(document).on('gform_load_field_settings', function(event, field) {
+                    if (!field || (field.type !== 'chainedselect' && field.type !== 'chained_select')) {
+                        return;
+                    }
+
+                    gfcsEnsureLeftSubLabelOption();
+
+                    if (field.subLabelPlacement === 'left') {
+                        $('#field_sub_label_placement').val('left');
+                    }
+                });
+            })(jQuery);
         </script>
         <?php
     }
@@ -275,8 +353,396 @@ JS;
     {
         $field_type = is_object($field) ? $field->type : '';
 
-        if (('chainedselect' === $field_type || 'chained_select' === $field_type) && !empty($field->autoSelectOnly)) {
+        if ('chainedselect' !== $field_type && 'chained_select' !== $field_type) {
+            return $field_content;
+        }
+
+        if (!empty($field->autoSelectOnly)) {
             $field_content = str_replace('<select', '<select data-auto-select-only="true"', $field_content);
+        }
+
+        if (
+            $this->is_left_sub_label_placement($field, (int) $form_id)
+            && false === strpos($field_content, 'gfcs-sub-label-left')
+        ) {
+            $field_content = preg_replace(
+                '/(<div[^>]*class=)(["\'])([^"\']*\bginput_chained_selects_container\b[^"\']*)(["\'])/i',
+                '$1$2$3 gfcs-sub-label-left$4',
+                $field_content,
+                1
+            );
+        }
+
+        $field_content = $this->inject_column_sections_markup($field_content, $field, (int) $form_id);
+
+        return $field_content;
+    }
+
+    /**
+     * Determine whether the field should render sub-labels on the left.
+     *
+     * The original Chained Selects plugin resolves this from either the field
+     * setting or the form default. The enhancer mirrors that logic here so the
+     * frontend no longer depends on a patched renderer in the source plugin.
+     *
+     * @param object $field   Field object.
+     * @param int    $form_id Form ID.
+     * @return bool
+     */
+    private function is_left_sub_label_placement($field, int $form_id): bool
+    {
+        static $form_sub_label_placements = array();
+
+        if (!is_object($field)) {
+            return false;
+        }
+
+        $field_sub_label_placement = isset($field->subLabelPlacement)
+            ? (string) $field->subLabelPlacement
+            : '';
+
+        if ('left' === $field_sub_label_placement) {
+            return true;
+        }
+
+        if ('' !== $field_sub_label_placement || $form_id <= 0) {
+            return false;
+        }
+
+        if (!array_key_exists($form_id, $form_sub_label_placements)) {
+            $form_sub_label_placements[$form_id] = '';
+
+            if (class_exists('GFAPI')) {
+                $form = call_user_func(array('GFAPI', 'get_form'), $form_id);
+
+                if (is_array($form) && isset($form['subLabelPlacement'])) {
+                    $form_sub_label_placements[$form_id] = (string) $form['subLabelPlacement'];
+                }
+            }
+        }
+
+        return 'left' === $form_sub_label_placements[$form_id];
+    }
+
+    /**
+     * Parse hidden column indices from field settings.
+     *
+     * @param object $field Field object.
+     * @return int[]
+     */
+    private function get_hidden_column_indices($field): array
+    {
+        if (!is_object($field) || empty($field->hideColumns) || !is_string($field->hideColumns)) {
+            return array();
+        }
+
+        $hidden_indices = array();
+
+        foreach (explode(',', $field->hideColumns) as $index) {
+            $index = trim($index);
+            if ($index === '' || !is_numeric($index)) {
+                continue;
+            }
+
+            $hidden_indices[] = (int) $index;
+        }
+
+        return array_values(array_unique($hidden_indices));
+    }
+
+    /**
+     * Convert legacy index-based section titles into grouped section data.
+     *
+     * @param array<int, string> $sections Legacy section titles keyed by input index.
+     * @param string[]           $input_ids Field input IDs in their native order.
+     * @return array<int, array<string, mixed>>
+     */
+    private function convert_legacy_column_sections_to_groups(array $sections, array $input_ids): array
+    {
+        if (empty($sections) || empty($input_ids)) {
+            return array();
+        }
+
+        ksort($sections);
+
+        $groups = array();
+        $section_starts = array_keys($sections);
+        $input_count = count($input_ids);
+
+        if ($section_starts[0] > 0) {
+            $groups[] = array(
+                'id' => uniqid('gfcssection', false),
+                'title' => '',
+                'columnIds' => array_slice($input_ids, 0, $section_starts[0]),
+            );
+        }
+
+        foreach ($section_starts as $position => $start_index) {
+            if ($start_index >= $input_count) {
+                continue;
+            }
+
+            $next_start = $position + 1 < count($section_starts) ? $section_starts[$position + 1] : $input_count;
+
+            $groups[] = array(
+                'id' => uniqid('gfcssection', false),
+                'title' => sanitize_text_field((string) $sections[$start_index]),
+                'columnIds' => array_slice($input_ids, $start_index, $next_start - $start_index),
+            );
+        }
+
+        return $groups;
+    }
+
+    /**
+     * Parse grouped column section data from field settings.
+     *
+     * @param object $field Field object.
+     * @return array<int, array<string, mixed>>
+     */
+    private function get_column_section_groups($field): array
+    {
+        if (!is_object($field) || empty($field->inputs) || !is_array($field->inputs)) {
+            return array();
+        }
+
+        $input_ids = array();
+        foreach ($field->inputs as $input) {
+            if (is_array($input) && isset($input['id'])) {
+                $input_ids[] = (string) $input['id'];
+            }
+        }
+
+        if (empty($input_ids)) {
+            return array();
+        }
+
+        $raw_sections = empty($field->columnSections) ? null : $field->columnSections;
+        $decoded = is_array($raw_sections) ? $raw_sections : json_decode((string) $raw_sections, true);
+        $groups = array();
+
+        if (is_array($decoded)) {
+            if (isset($decoded['groups']) && is_array($decoded['groups'])) {
+                $decoded = $decoded['groups'];
+            }
+
+            $is_sequential_array = empty($decoded) || array_keys($decoded) === range(0, count($decoded) - 1);
+
+            if ($is_sequential_array) {
+                $input_lookup = array_fill_keys($input_ids, true);
+                $used_lookup = array();
+
+                foreach ($decoded as $group) {
+                    if (!is_array($group)) {
+                        continue;
+                    }
+
+                    $column_ids = array();
+                    $raw_column_ids = isset($group['columnIds']) && is_array($group['columnIds']) ? $group['columnIds'] : array();
+
+                    foreach ($raw_column_ids as $column_id) {
+                        $column_id = (string) $column_id;
+
+                        if ($column_id === '' || !isset($input_lookup[$column_id]) || isset($used_lookup[$column_id])) {
+                            continue;
+                        }
+
+                        $column_ids[] = $column_id;
+                        $used_lookup[$column_id] = true;
+                    }
+
+                    $groups[] = array(
+                        'id' => isset($group['id']) ? sanitize_key((string) $group['id']) : uniqid('gfcssection', false),
+                        'title' => isset($group['title']) ? sanitize_text_field((string) $group['title']) : '',
+                        'columnIds' => $column_ids,
+                    );
+                }
+            } else {
+                $legacy_sections = array();
+
+                foreach ($decoded as $index => $title) {
+                    if (!is_numeric($index)) {
+                        continue;
+                    }
+
+                    $index = (int) $index;
+                    $title = sanitize_text_field((string) $title);
+
+                    if ($index < 0 || $title === '') {
+                        continue;
+                    }
+
+                    $legacy_sections[$index] = $title;
+                }
+
+                $groups = $this->convert_legacy_column_sections_to_groups($legacy_sections, $input_ids);
+            }
+        }
+
+        $used_lookup = array();
+        foreach ($groups as $group) {
+            if (!isset($group['columnIds']) || !is_array($group['columnIds'])) {
+                continue;
+            }
+
+            foreach ($group['columnIds'] as $column_id) {
+                $used_lookup[(string) $column_id] = true;
+            }
+        }
+
+        $unassigned = array();
+        foreach ($input_ids as $input_id) {
+            if (!isset($used_lookup[$input_id])) {
+                $unassigned[] = $input_id;
+            }
+        }
+
+        if (empty($groups)) {
+            $groups[] = array(
+                'id' => uniqid('gfcssection', false),
+                'title' => '',
+                'columnIds' => $input_ids,
+            );
+        } elseif (!empty($unassigned)) {
+            $groups[] = array(
+                'id' => uniqid('gfcssection', false),
+                'title' => '',
+                'columnIds' => $unassigned,
+            );
+        }
+
+        return $groups;
+    }
+
+    /**
+     * Resolve section titles to the first visible column in each section group.
+     *
+     * @param array<int, array<string, mixed>> $groups Grouped section data.
+     * @param object                           $field  Field object.
+     * @return array<int, string>
+     */
+    private function get_section_anchor_indices(array $groups, $field): array
+    {
+        if (empty($groups) || !is_object($field) || empty($field->inputs) || !is_array($field->inputs)) {
+            return array();
+        }
+
+        $hidden_lookup = array_fill_keys($this->get_hidden_column_indices($field), true);
+        $input_id_to_index = array();
+
+        foreach ($field->inputs as $index => $input) {
+            if (is_array($input) && isset($input['id'])) {
+                $input_id_to_index[(string) $input['id']] = $index;
+            }
+        }
+
+        $anchors = array();
+
+        foreach ($groups as $group) {
+            $title = isset($group['title']) ? sanitize_text_field((string) $group['title']) : '';
+            if ($title === '') {
+                continue;
+            }
+
+            $anchor_index = null;
+            $column_ids = isset($group['columnIds']) && is_array($group['columnIds']) ? $group['columnIds'] : array();
+
+            foreach ($column_ids as $column_id) {
+                $column_id = (string) $column_id;
+
+                if (!isset($input_id_to_index[$column_id])) {
+                    continue;
+                }
+
+                $index = $input_id_to_index[$column_id];
+                if (isset($hidden_lookup[$index])) {
+                    continue;
+                }
+
+                if ($anchor_index === null || $index < $anchor_index) {
+                    $anchor_index = $index;
+                }
+            }
+
+            if ($anchor_index !== null) {
+                $anchors[$anchor_index] = $title;
+            }
+        }
+
+        ksort($anchors);
+
+        return $anchors;
+    }
+
+    /**
+     * Build the container ID used by the chained select renderer for an input.
+     *
+     * @param int   $form_id Form ID.
+     * @param array $input   Input configuration.
+     * @return string
+     */
+    private function get_input_container_id(int $form_id, array $input): string
+    {
+        if (!isset($input['id'])) {
+            return '';
+        }
+
+        return sprintf(
+            'input_%d_%s_container',
+            $form_id,
+            str_replace('.', '_', (string) $input['id'])
+        );
+    }
+
+    /**
+     * Inject section headings before the configured columns.
+     *
+     * @param string $field_content Field markup.
+     * @param object $field         Field object.
+     * @param int    $form_id       Form ID.
+     * @return string
+     */
+    private function inject_column_sections_markup(string $field_content, $field, int $form_id): string
+    {
+        if (
+            !is_object($field)
+            || false !== strpos($field_content, 'gfcs-column-section')
+            || empty($field->inputs)
+            || !is_array($field->inputs)
+        ) {
+            return $field_content;
+        }
+
+        $groups = $this->get_column_section_groups($field);
+        if (empty($groups)) {
+            return $field_content;
+        }
+
+        $anchors = $this->get_section_anchor_indices($groups, $field);
+
+        if (empty($anchors)) {
+            return $field_content;
+        }
+
+        krsort($anchors);
+
+        foreach ($anchors as $index => $title) {
+            if (!isset($field->inputs[$index]) || !is_array($field->inputs[$index])) {
+                continue;
+            }
+
+            $container_id = $this->get_input_container_id($form_id, $field->inputs[$index]);
+            if ($container_id === '') {
+                continue;
+            }
+
+            $section_markup = sprintf(
+                "<div class='gfcs-column-section'><div class='gfcs-column-section__label'>%s</div></div>",
+                esc_html($title)
+            );
+
+            $pattern = '/(<span id=["\']' . preg_quote($container_id, '/') . '["\'][^>]*>)/';
+            $field_content = preg_replace($pattern, $section_markup . '$1', $field_content, 1);
         }
 
         return $field_content;
@@ -331,17 +797,18 @@ JS;
             }
 
             // Handle hidden columns.
-            if (!empty($field->hideColumns)) {
-                $hidden_indices = explode(',', $field->hideColumns);
-                foreach ($hidden_indices as $index) {
-                    $index = intval(trim($index));
-                    $col_idx = $index + 1;
-                    $css_rules[] = sprintf(
-                        '#input_%d_%d_%d_container { display: none !important; }',
-                        $form['id'],
-                        $field->id,
-                        $col_idx
-                    );
+            if (!empty($field->hideColumns) && !empty($field->inputs) && is_array($field->inputs)) {
+                foreach ($this->get_hidden_column_indices($field) as $index) {
+                    if (!isset($field->inputs[$index]) || !is_array($field->inputs[$index])) {
+                        continue;
+                    }
+
+                    $container_id = $this->get_input_container_id((int) $form['id'], $field->inputs[$index]);
+                    if ($container_id === '') {
+                        continue;
+                    }
+
+                    $css_rules[] = sprintf('#%s { display: none !important; }', $container_id);
                 }
             }
 

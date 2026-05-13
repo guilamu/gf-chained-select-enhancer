@@ -200,6 +200,8 @@ JS;
             'newSectionTitle' => __('New Section', 'gf-chained-select-enhancer'),
             'addSection' => __('Add a section', 'gf-chained-select-enhancer'),
             'dropColumnsHere' => __('Drop columns here', 'gf-chained-select-enhancer'),
+            'toggleSideBySide' => __('Display section next to the following section', 'gf-chained-select-enhancer'),
+            'sideBySide' => __('Side by side', 'gf-chained-select-enhancer'),
             'renameSection' => __('Rename section', 'gf-chained-select-enhancer'),
             'collapseSection' => __('Collapse section', 'gf-chained-select-enhancer'),
             'expandSection' => __('Expand section', 'gf-chained-select-enhancer'),
@@ -558,6 +560,7 @@ JS;
                 'id' => uniqid('gfcssection', false),
                 'title' => '',
                 'columnIds' => array_slice($input_ids, 0, $section_starts[0]),
+                'pairWithNext' => false,
             );
         }
 
@@ -572,10 +575,51 @@ JS;
                 'id' => uniqid('gfcssection', false),
                 'title' => sanitize_text_field((string) $sections[$start_index]),
                 'columnIds' => array_slice($input_ids, $start_index, $next_start - $start_index),
+                'pairWithNext' => false,
             );
         }
 
         return $groups;
+    }
+
+    /**
+     * Ensure section pairings remain valid and non-overlapping.
+     *
+     * @param array<int, array<string, mixed>> $groups Grouped section data.
+     * @return array<int, array<string, mixed>>
+     */
+    private function normalize_section_group_pairings(array $groups): array
+    {
+        $normalized_groups = array();
+        $previous_owns_pair = false;
+        $group_count = count($groups);
+
+        foreach ($groups as $index => $group) {
+            if (!is_array($group)) {
+                continue;
+            }
+
+            $column_ids = isset($group['columnIds']) && is_array($group['columnIds']) ? $group['columnIds'] : array();
+            $pair_with_next = false;
+
+            if ($previous_owns_pair) {
+                $previous_owns_pair = false;
+            } else {
+                $pair_with_next = !empty($group['pairWithNext']) && $index < $group_count - 1;
+                $previous_owns_pair = $pair_with_next;
+            }
+
+            $normalized_groups[] = array(
+                'id' => isset($group['id']) ? sanitize_key((string) $group['id']) : uniqid('gfcssection', false),
+                'title' => isset($group['title']) ? sanitize_text_field((string) $group['title']) : '',
+                'columnIds' => array_values(array_filter(array_map('strval', $column_ids), static function ($column_id) {
+                    return '' !== trim($column_id);
+                })),
+                'pairWithNext' => $pair_with_next,
+            );
+        }
+
+        return $normalized_groups;
     }
 
     /**
@@ -639,6 +683,7 @@ JS;
                         'id' => isset($group['id']) ? sanitize_key((string) $group['id']) : uniqid('gfcssection', false),
                         'title' => isset($group['title']) ? sanitize_text_field((string) $group['title']) : '',
                         'columnIds' => $column_ids,
+                        'pairWithNext' => !empty($group['pairWithNext']),
                     );
                 }
             } else {
@@ -686,16 +731,297 @@ JS;
                 'id' => uniqid('gfcssection', false),
                 'title' => '',
                 'columnIds' => $input_ids,
+                'pairWithNext' => false,
             );
         } elseif (!empty($unassigned)) {
             $groups[] = array(
                 'id' => uniqid('gfcssection', false),
                 'title' => '',
                 'columnIds' => $unassigned,
+                'pairWithNext' => false,
             );
         }
 
-        return $groups;
+        return $this->normalize_section_group_pairings($groups);
+    }
+
+    /**
+     * Get section groups ready for frontend rendering.
+     *
+     * @param object $field Field object.
+     * @return array<int, array<string, mixed>>
+     */
+    private function get_renderable_section_groups($field): array
+    {
+        if (!is_object($field) || empty($field->inputs) || !is_array($field->inputs)) {
+            return array();
+        }
+
+        $groups = $this->get_column_section_groups($field);
+        if (empty($groups)) {
+            return array();
+        }
+
+        $hidden_lookup = array_fill_keys($this->get_hidden_column_indices($field), true);
+        $input_index_by_id = array();
+
+        foreach ($field->inputs as $index => $input) {
+            if (is_array($input) && isset($input['id'])) {
+                $input_index_by_id[(string) $input['id']] = $index;
+            }
+        }
+
+        $renderable_groups = array();
+
+        foreach ($groups as $group) {
+            if (!is_array($group)) {
+                continue;
+            }
+
+            $column_ids = array();
+            $raw_column_ids = isset($group['columnIds']) && is_array($group['columnIds']) ? $group['columnIds'] : array();
+
+            foreach ($raw_column_ids as $column_id) {
+                $column_id = (string) $column_id;
+
+                if (!isset($input_index_by_id[$column_id])) {
+                    continue;
+                }
+
+                if (isset($hidden_lookup[$input_index_by_id[$column_id]])) {
+                    continue;
+                }
+
+                $column_ids[] = $column_id;
+            }
+
+            if (empty($column_ids)) {
+                continue;
+            }
+
+            $renderable_groups[] = array(
+                'id' => isset($group['id']) ? sanitize_key((string) $group['id']) : uniqid('gfcssection', false),
+                'title' => isset($group['title']) ? sanitize_text_field((string) $group['title']) : '',
+                'columnIds' => $column_ids,
+                'pairWithNext' => !empty($group['pairWithNext']),
+            );
+        }
+
+        return $this->normalize_section_group_pairings($renderable_groups);
+    }
+
+    /**
+     * Get the inner HTML of a DOM node.
+     *
+     * @param \DOMNode $node DOM node.
+     * @return string
+     */
+    private function get_dom_inner_html(\DOMNode $node): string
+    {
+        $html = '';
+
+        foreach ($node->childNodes as $child_node) {
+            $html .= $node->ownerDocument->saveHTML($child_node);
+        }
+
+        return $html;
+    }
+
+    /**
+     * Rebuild the chained select container with grouped section wrappers.
+     *
+     * @param string                              $field_content Field markup.
+     * @param object                              $field         Field object.
+     * @param int                                 $form_id       Form ID.
+     * @param array<int, array<string, mixed>>    $groups        Renderable section groups.
+     * @return string|null
+     */
+    private function rebuild_column_sections_markup(string $field_content, $field, int $form_id, array $groups): ?string
+    {
+        if (!class_exists('DOMDocument') || !class_exists('DOMXPath')) {
+            return null;
+        }
+
+        $previous_error_state = libxml_use_internal_errors(true);
+        $dom = new DOMDocument('1.0', 'UTF-8');
+        $load_options = 0;
+
+        if (defined('LIBXML_HTML_NOIMPLIED')) {
+            $load_options |= LIBXML_HTML_NOIMPLIED;
+        }
+
+        if (defined('LIBXML_HTML_NODEFDTD')) {
+            $load_options |= LIBXML_HTML_NODEFDTD;
+        }
+
+        $loaded = $dom->loadHTML('<?xml encoding="utf-8" ?><div id="gfcs-root">' . $field_content . '</div>', $load_options);
+        if (!$loaded) {
+            libxml_clear_errors();
+            libxml_use_internal_errors($previous_error_state);
+
+            return null;
+        }
+
+        $xpath = new DOMXPath($dom);
+        $root = $xpath->query('//*[@id="gfcs-root"]')->item(0);
+        $container = $xpath->query('.//*[@id="' . sprintf('input_%d_%d', $form_id, $field->id) . '"]', $root)->item(0);
+
+        if (!$root instanceof DOMElement || !$container instanceof DOMElement) {
+            libxml_clear_errors();
+            libxml_use_internal_errors($previous_error_state);
+
+            return null;
+        }
+
+        $input_nodes = array();
+
+        foreach ($field->inputs as $input) {
+            if (!is_array($input) || !isset($input['id'])) {
+                continue;
+            }
+
+            $input_container_id = $this->get_input_container_id($form_id, $input);
+            if ('' === $input_container_id) {
+                continue;
+            }
+
+            $input_node = $xpath->query('.//*[@id="' . $input_container_id . '"]', $container)->item(0);
+            if ($input_node instanceof DOMElement) {
+                $input_nodes[(string) $input['id']] = $input_node->cloneNode(true);
+            }
+        }
+
+        $completion_node = $xpath->query('.//*[contains(concat(" ", normalize-space(@class), " "), " gf_chain_complete ")]', $container)->item(0);
+        $completion_clone = $completion_node instanceof DOMElement ? $completion_node->cloneNode(true) : null;
+
+        while ($container->firstChild) {
+            $container->removeChild($container->firstChild);
+        }
+
+        $block_nodes = array();
+
+        foreach ($groups as $group) {
+            if (!is_array($group) || empty($group['columnIds']) || !is_array($group['columnIds'])) {
+                continue;
+            }
+
+            $block = $dom->createElement('div');
+            $block_classes = array('gfcs-column-section-block');
+            $title = isset($group['title']) ? trim((string) $group['title']) : '';
+
+            if ('' === $title) {
+                $block_classes[] = 'gfcs-column-section-block--untitled';
+            }
+
+            $block->setAttribute('class', implode(' ', $block_classes));
+
+            if ('' !== $title) {
+                $section = $dom->createElement('div');
+                $section->setAttribute('class', 'gfcs-column-section');
+
+                $label = $dom->createElement('div');
+                $label->setAttribute('class', 'gfcs-column-section__label');
+                $label->appendChild($dom->createTextNode($title));
+
+                $section->appendChild($label);
+                $block->appendChild($section);
+            }
+
+            $has_columns = false;
+
+            foreach ($group['columnIds'] as $column_id) {
+                $column_id = (string) $column_id;
+
+                if (!isset($input_nodes[$column_id])) {
+                    continue;
+                }
+
+                $block->appendChild($input_nodes[$column_id]->cloneNode(true));
+                $has_columns = true;
+            }
+
+            if (!$has_columns) {
+                continue;
+            }
+
+            $block_nodes[] = array(
+                'node' => $block,
+                'pairWithNext' => !empty($group['pairWithNext']),
+            );
+        }
+
+        if (empty($block_nodes)) {
+            libxml_clear_errors();
+            libxml_use_internal_errors($previous_error_state);
+
+            return null;
+        }
+
+        for ($index = 0; $index < count($block_nodes); $index++) {
+            if (!empty($block_nodes[$index]['pairWithNext']) && isset($block_nodes[$index + 1])) {
+                $row = $dom->createElement('div');
+                $row->setAttribute('class', 'gfcs-column-section-row');
+                $row->appendChild($block_nodes[$index]['node']);
+                $row->appendChild($block_nodes[$index + 1]['node']);
+                $container->appendChild($row);
+                $index++;
+                continue;
+            }
+
+            $container->appendChild($block_nodes[$index]['node']);
+        }
+
+        if ($completion_clone instanceof DOMElement) {
+            $container->appendChild($completion_clone);
+        }
+
+        $output = $this->get_dom_inner_html($root);
+
+        libxml_clear_errors();
+        libxml_use_internal_errors($previous_error_state);
+
+        return $output;
+    }
+
+    /**
+     * Inject simple section headings when full grouped layout rebuilding is unavailable.
+     *
+     * @param string                           $field_content Field markup.
+     * @param object                           $field         Field object.
+     * @param int                              $form_id       Form ID.
+     * @param array<int, array<string, mixed>> $groups        Renderable section groups.
+     * @return string
+     */
+    private function inject_section_heading_anchors(string $field_content, $field, int $form_id, array $groups): string
+    {
+        $anchors = $this->get_section_anchor_indices($groups, $field);
+
+        if (empty($anchors)) {
+            return $field_content;
+        }
+
+        krsort($anchors);
+
+        foreach ($anchors as $index => $title) {
+            if (!isset($field->inputs[$index]) || !is_array($field->inputs[$index])) {
+                continue;
+            }
+
+            $container_id = $this->get_input_container_id($form_id, $field->inputs[$index]);
+            if ('' === $container_id) {
+                continue;
+            }
+
+            $section_markup = sprintf(
+                "<div class='gfcs-column-section'><div class='gfcs-column-section__label'>%s</div></div>",
+                esc_html($title)
+            );
+
+            $pattern = '/(<span id=["\']' . preg_quote($container_id, '/') . '["\'][^>]*>)/';
+            $field_content = preg_replace($pattern, $section_markup . '$1', $field_content, 1);
+        }
+
+        return $field_content;
     }
 
     /**
@@ -779,6 +1105,150 @@ JS;
     }
 
     /**
+     * Add CSS classes to an input container span in the rendered field markup.
+     *
+     * @param string   $field_content Field markup.
+     * @param string   $container_id  Container DOM ID.
+     * @param string[] $classes       Classes to append.
+     * @return string
+     */
+    private function add_classes_to_input_container_markup(string $field_content, string $container_id, array $classes): string
+    {
+        $classes = array_values(array_filter(array_unique(array_map('sanitize_html_class', $classes))));
+        if ('' === $container_id || empty($classes)) {
+            return $field_content;
+        }
+
+        $class_string = implode(' ', $classes);
+        $pattern = '/(<span\s+id=["\']' . preg_quote($container_id, '/') . '["\']\s+class=["\'])([^"\']*)(["\'][^>]*>)/';
+
+        if (preg_match($pattern, $field_content)) {
+            return preg_replace($pattern, '$1$2 ' . $class_string . '$3', $field_content, 1);
+        }
+
+        return $field_content;
+    }
+
+    /**
+     * Insert markup immediately before an input container span.
+     *
+     * @param string $field_content Field markup.
+     * @param string $container_id  Container DOM ID.
+     * @param string $markup        Markup to prepend.
+     * @return string
+     */
+    private function prepend_markup_before_input_container(string $field_content, string $container_id, string $markup): string
+    {
+        if ('' === $container_id || '' === $markup) {
+            return $field_content;
+        }
+
+        $pattern = '/(<span\s+id=["\']' . preg_quote($container_id, '/') . '["\'][^>]*>)/';
+
+        return preg_replace($pattern, $markup . '$1', $field_content, 1);
+    }
+
+    /**
+     * Inject section headings and pair layout classes without nesting the column spans.
+     *
+     * @param string                           $field_content Field markup.
+     * @param object                           $field         Field object.
+     * @param int                              $form_id       Form ID.
+     * @param array<int, array<string, mixed>> $groups        Renderable section groups.
+     * @return string
+     */
+    private function inject_flat_section_layout_markup(string $field_content, $field, int $form_id, array $groups): string
+    {
+        if (!is_object($field) || empty($field->inputs) || !is_array($field->inputs)) {
+            return $field_content;
+        }
+
+        foreach ($groups as $group) {
+            if (!empty($group['pairWithNext'])) {
+                $field_content = $this->add_chained_select_container_class($field_content, 'gfcs-has-paired-sections');
+                break;
+            }
+        }
+
+        $inputs_by_id = array();
+        $break_before_indices = array();
+
+        foreach ($field->inputs as $input) {
+            if (is_array($input) && isset($input['id'])) {
+                $inputs_by_id[(string) $input['id']] = $input;
+            }
+        }
+
+        foreach ($groups as $index => $group) {
+            if (!is_array($group) || empty($group['pairWithNext']) || !isset($groups[$index + 1], $groups[$index + 2])) {
+                continue;
+            }
+
+            $break_before_indices[$index + 2] = true;
+        }
+
+        foreach ($groups as $index => $group) {
+            $column_ids = isset($group['columnIds']) && is_array($group['columnIds']) ? $group['columnIds'] : array();
+            if (empty($column_ids)) {
+                continue;
+            }
+
+            $is_paired_left = !empty($group['pairWithNext']) && isset($groups[$index + 1]);
+            $is_paired_right = !$is_paired_left && $index > 0 && !empty($groups[$index - 1]['pairWithNext']);
+            $layout_modifier = $is_paired_left ? 'paired-left' : ($is_paired_right ? 'paired-right' : 'full');
+            $first_column_id = (string) reset($column_ids);
+
+            foreach ($column_ids as $column_id) {
+                $column_id = (string) $column_id;
+
+                if (!isset($inputs_by_id[$column_id])) {
+                    continue;
+                }
+
+                $field_content = $this->add_classes_to_input_container_markup(
+                    $field_content,
+                    $this->get_input_container_id($form_id, $inputs_by_id[$column_id]),
+                    array(
+                        'gfcs-column-section-input',
+                        'gfcs-column-section-input--' . $layout_modifier,
+                    )
+                );
+            }
+
+            if (!isset($inputs_by_id[$first_column_id])) {
+                continue;
+            }
+
+            $prefix_markup = '';
+            $title = isset($group['title']) ? trim((string) $group['title']) : '';
+
+            if (!empty($break_before_indices[$index])) {
+                $prefix_markup .= "<div class='gfcs-column-section-break' aria-hidden='true'></div>";
+            }
+
+            if ('' !== $title) {
+                $prefix_markup .= sprintf(
+                    "<div class='%s'><div class='gfcs-column-section__label'>%s</div></div>",
+                    esc_attr('gfcs-column-section gfcs-column-section--' . $layout_modifier),
+                    esc_html($title)
+                );
+            }
+
+            if ('' === $prefix_markup) {
+                continue;
+            }
+
+            $field_content = $this->prepend_markup_before_input_container(
+                $field_content,
+                $this->get_input_container_id($form_id, $inputs_by_id[$first_column_id]),
+                $prefix_markup
+            );
+        }
+
+        return $field_content;
+    }
+
+    /**
      * Inject section headings before the configured columns.
      *
      * @param string $field_content Field markup.
@@ -797,39 +1267,12 @@ JS;
             return $field_content;
         }
 
-        $groups = $this->get_column_section_groups($field);
+        $groups = $this->get_renderable_section_groups($field);
         if (empty($groups)) {
             return $field_content;
         }
 
-        $anchors = $this->get_section_anchor_indices($groups, $field);
-
-        if (empty($anchors)) {
-            return $field_content;
-        }
-
-        krsort($anchors);
-
-        foreach ($anchors as $index => $title) {
-            if (!isset($field->inputs[$index]) || !is_array($field->inputs[$index])) {
-                continue;
-            }
-
-            $container_id = $this->get_input_container_id($form_id, $field->inputs[$index]);
-            if ($container_id === '') {
-                continue;
-            }
-
-            $section_markup = sprintf(
-                "<div class='gfcs-column-section'><div class='gfcs-column-section__label'>%s</div></div>",
-                esc_html($title)
-            );
-
-            $pattern = '/(<span id=["\']' . preg_quote($container_id, '/') . '["\'][^>]*>)/';
-            $field_content = preg_replace($pattern, $section_markup . '$1', $field_content, 1);
-        }
-
-        return $field_content;
+        return $this->inject_flat_section_layout_markup($field_content, $field, $form_id, $groups);
     }
 
     /**

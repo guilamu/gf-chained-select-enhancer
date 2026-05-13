@@ -126,7 +126,8 @@
             groups.push({
                 id: createSectionId(),
                 title: '',
-                columnIds: inputIds.slice(0, starts[0])
+                columnIds: inputIds.slice(0, starts[0]),
+                pairWithNext: false
             });
         }
 
@@ -140,7 +141,8 @@
             groups.push({
                 id: createSectionId(),
                 title: titlesByStart[start],
-                columnIds: inputIds.slice(start, nextStart)
+                columnIds: inputIds.slice(start, nextStart),
+                pairWithNext: false
             });
         });
 
@@ -174,11 +176,41 @@
             groups.push({
                 id: String(group.id || createSectionId()),
                 title: String(group.title || ''),
-                columnIds: columnIds
+                columnIds: columnIds,
+                pairWithNext: !!group.pairWithNext
             });
         });
 
         return groups;
+    }
+
+    function sanitizeSectionGroups(groups) {
+        var sourceGroups = Array.isArray(groups) ? groups : [];
+        var previousOwnsPair = false;
+
+        return sourceGroups.map(function (group, index) {
+            var sanitized = {
+                id: String(group && group.id ? group.id : createSectionId()),
+                title: String(group && group.title ? group.title : ''),
+                columnIds: Array.isArray(group && group.columnIds)
+                    ? group.columnIds.filter(function (columnId) {
+                        return !!String(columnId || '').trim();
+                    }).map(function (columnId) {
+                        return String(columnId);
+                    })
+                    : [],
+                pairWithNext: false
+            };
+
+            if (!previousOwnsPair) {
+                sanitized.pairWithNext = !!(group && group.pairWithNext) && index < sourceGroups.length - 1;
+                previousOwnsPair = sanitized.pairWithNext;
+            } else {
+                previousOwnsPair = false;
+            }
+
+            return sanitized;
+        });
     }
 
     function normalizeSectionGroups(field) {
@@ -214,7 +246,8 @@
             groups.push({
                 id: createSectionId(),
                 title: '',
-                columnIds: leftovers.length ? leftovers.slice() : inputIds.slice()
+                columnIds: leftovers.length ? leftovers.slice() : inputIds.slice(),
+                pairWithNext: false
             });
             leftovers = [];
         }
@@ -230,7 +263,8 @@
                 fallbackGroup = {
                     id: createSectionId(),
                     title: '',
-                    columnIds: []
+                    columnIds: [],
+                    pairWithNext: false
                 };
                 groups.push(fallbackGroup);
             }
@@ -238,7 +272,7 @@
             fallbackGroup.columnIds = fallbackGroup.columnIds.concat(leftovers);
         }
 
-        return groups;
+        return sanitizeSectionGroups(groups);
     }
 
     function buildColumnManagerState(field, previousState) {
@@ -266,6 +300,8 @@
             return;
         }
 
+        state.groups = sanitizeSectionGroups(state.groups);
+
         inputs.forEach(function (input, index) {
             indexById[String(input.id)] = index;
         });
@@ -274,6 +310,7 @@
             payloadGroups.push({
                 id: String(group.id || createSectionId()),
                 title: String(group.title || '').trim(),
+                pairWithNext: !!group.pairWithNext,
                 columnIds: group.columnIds.filter(function (columnId) {
                     return Object.prototype.hasOwnProperty.call(indexById, columnId);
                 })
@@ -305,39 +342,78 @@
         }
     }
 
-    function getSectionAnchorMap(field) {
+    function getRenderableSectionGroups(field) {
         var state = field && field._gfcsColumnManagerUi ? field._gfcsColumnManagerUi : buildColumnManagerState(field, null);
-        var indexById = {};
-        var anchors = {};
+        var inputMap = getFieldInputMap(field);
 
-        getFieldInputs(field).forEach(function (input, index) {
-            indexById[String(input.id)] = index;
+        return sanitizeSectionGroups(state.groups).map(function (group) {
+            return {
+                id: String(group.id || createSectionId()),
+                title: String(group.title || '').trim(),
+                pairWithNext: !!group.pairWithNext,
+                columnIds: group.columnIds.filter(function (columnId) {
+                    return !!inputMap[columnId] && !state.hiddenById[columnId];
+                })
+            };
+        }).filter(function (group) {
+            return group.columnIds.length > 0;
+        });
+    }
+
+    function getPairOwnerIndex(groups, index) {
+        if (!Array.isArray(groups) || index < 0 || index >= groups.length) {
+            return -1;
+        }
+
+        if (index > 0 && groups[index - 1] && groups[index - 1].pairWithNext) {
+            return index - 1;
+        }
+
+        if (groups[index] && groups[index].pairWithNext) {
+            return index;
+        }
+
+        return -1;
+    }
+
+    function toggleGroupPairing(field, groupId) {
+        var state = field && field._gfcsColumnManagerUi;
+        var groupIndex = -1;
+        var ownerIndex;
+
+        if (!state) {
+            return;
+        }
+
+        state.groups = sanitizeSectionGroups(state.groups);
+
+        state.groups.forEach(function (group, index) {
+            if (group.id === groupId) {
+                groupIndex = index;
+            }
         });
 
-        state.groups.forEach(function (group) {
-            var title = String(group.title || '').trim();
-            var anchorIndex = null;
+        if (groupIndex === -1) {
+            return;
+        }
 
-            if (!title) {
-                return;
+        ownerIndex = getPairOwnerIndex(state.groups, groupIndex);
+
+        if (ownerIndex !== -1) {
+            state.groups[ownerIndex].pairWithNext = false;
+        } else if (groupIndex < state.groups.length - 1) {
+            state.groups[groupIndex].pairWithNext = true;
+            if (state.groups[groupIndex + 1]) {
+                state.groups[groupIndex + 1].pairWithNext = false;
             }
+        } else {
+            return;
+        }
 
-            group.columnIds.forEach(function (columnId) {
-                if (state.hiddenById[columnId] || !Object.prototype.hasOwnProperty.call(indexById, columnId)) {
-                    return;
-                }
-
-                if (anchorIndex === null || indexById[columnId] < anchorIndex) {
-                    anchorIndex = indexById[columnId];
-                }
-            });
-
-            if (anchorIndex !== null) {
-                anchors[anchorIndex] = title;
-            }
-        });
-
-        return anchors;
+        state.groups = sanitizeSectionGroups(state.groups);
+        syncColumnManagerToField(field);
+        renderColumnToggles(field);
+        refreshSubLabelPlacementPreview(field);
     }
 
     function formatSectionMeta(columnCount, hiddenCount) {
@@ -573,10 +649,14 @@
         var heading = document.createElement('div');
         var meta = document.createElement('div');
         var actions = document.createElement('div');
+        var pairButton = document.createElement('button');
         var editButton = document.createElement('button');
         var toggleButton = document.createElement('button');
         var body = document.createElement('div');
         var hiddenCount = 0;
+        var pairOwnerIndex = getPairOwnerIndex(state.groups, index);
+        var isPaired = pairOwnerIndex !== -1;
+        var canPair = isPaired || index < state.groups.length - 1;
 
         card.className = 'gfcs-section-card';
         if (state.collapsedGroupIds[group.id]) {
@@ -646,6 +726,28 @@
 
         actions.className = 'gfcs-section-actions';
 
+        pairButton.type = 'button';
+        pairButton.className = 'gfcs-section-action gfcs-section-pair';
+        pairButton.setAttribute('aria-label', settings.toggleSideBySide);
+        pairButton.title = settings.toggleSideBySide;
+        pairButton.innerHTML = '<span class="dashicons dashicons-columns" aria-hidden="true"></span>';
+        pairButton.disabled = !canPair;
+
+        if (isPaired) {
+            pairButton.classList.add('is-active');
+        }
+
+        pairButton.addEventListener('click', function (event) {
+            event.preventDefault();
+            event.stopPropagation();
+
+            if (!canPair) {
+                return;
+            }
+
+            toggleGroupPairing(field, group.id);
+        });
+
         editButton.type = 'button';
         editButton.className = 'gfcs-section-action gfcs-section-edit';
         editButton.setAttribute('aria-label', settings.renameSection);
@@ -668,6 +770,7 @@
             toggleGroupCollapsed(field, group.id);
         });
 
+        actions.appendChild(pairButton);
         actions.appendChild(editButton);
         actions.appendChild(toggleButton);
 
@@ -720,6 +823,28 @@
         return card;
     }
 
+    function createPairedDivider() {
+        var divider = document.createElement('div');
+        var label = document.createElement('span');
+        var icon = document.createElement('span');
+        var text = document.createElement('span');
+
+        divider.className = 'gfcs-paired-divider';
+
+        label.className = 'gfcs-paired-divider__label';
+
+        icon.className = 'dashicons dashicons-columns';
+        icon.setAttribute('aria-hidden', 'true');
+
+        text.textContent = settings.sideBySide;
+
+        label.appendChild(icon);
+        label.appendChild(text);
+        divider.appendChild(label);
+
+        return divider;
+    }
+
     function createAddSectionButton(field) {
         var button = document.createElement('button');
         var icon = document.createElement('span');
@@ -733,7 +858,8 @@
             field._gfcsColumnManagerUi.groups.push({
                 id: newGroupId,
                 title: settings.newSectionTitle,
-                columnIds: []
+                columnIds: [],
+                pairWithNext: false
             });
             field._gfcsColumnManagerUi.editingGroupId = newGroupId;
             syncColumnManagerToField(field);
@@ -774,9 +900,14 @@
         }
 
         managerState = field._gfcsColumnManagerUi || refreshColumnManagerState(field);
+        managerState.groups = sanitizeSectionGroups(managerState.groups);
 
         managerState.groups.forEach(function (group, index) {
             container.appendChild(createSectionCard(field, group, index));
+
+            if (group.pairWithNext && managerState.groups[index + 1]) {
+                container.appendChild(createPairedDivider());
+            }
         });
 
         container.appendChild(createAddSectionButton(field));
@@ -886,13 +1017,62 @@
         }
     }
 
+    function buildPreviewInputMarkup(field, input, inputCssClass, subLabelClass, isSubLabelAbove) {
+        var fieldId = input.id;
+        var fieldIdUnderScore = fieldId.replace('.', '_');
+        var htmlId = 'input_' + field.formId + '_' + fieldIdUnderScore;
+        var escapedLabel = escapeHtml(input.label || '');
+        var inputCssClassAttribute = inputCssClass ? ' class="' + inputCssClass + '"' : '';
+        var inputContainerClass = inputCssClass ? 'gform-grid-col ' + inputCssClass : 'gform-grid-col';
+        var options = '<option value="" selected="selected" class="gf_placeholder">' + escapedLabel + '</option>';
+        var inputSubLabel = '<label for="' + htmlId + '" id="' + htmlId + '_label" class="gform-field-label gform-field-label--type-sub ' + subLabelClass + '">' + escapedLabel + '</label>';
+        var markup = '<span id="' + htmlId + '_container" class="' + inputContainerClass + '">';
+
+        if (isSubLabelAbove) {
+            markup += inputSubLabel;
+        }
+
+        markup += '<select name="input_' + fieldId + '" id="' + htmlId + '"' + inputCssClassAttribute + ' disabled="disabled">' + options + '</select>';
+
+        if (!isSubLabelAbove) {
+            markup += inputSubLabel;
+        }
+
+        markup += '</span>\n';
+
+        return markup;
+    }
+
+    function buildPreviewSectionMarkup(field, group, inputMap, inputCssClass, subLabelClass, isSubLabelAbove) {
+        var markup = '<div class="gfcs-column-section-block' + (group.title ? '' : ' gfcs-column-section-block--untitled') + '">';
+
+        if (group.title) {
+            markup += '<div class="gfcs-column-section"><div class="gfcs-column-section__label">' + escapeHtml(group.title) + '</div></div>';
+        }
+
+        group.columnIds.forEach(function (columnId) {
+            var input = inputMap[columnId];
+
+            if (!input) {
+                return;
+            }
+
+            markup += buildPreviewInputMarkup(field, input, inputCssClass, subLabelClass, isSubLabelAbove);
+        });
+
+        markup += '</div>';
+
+        return markup;
+    }
+
     function refreshSubLabelPlacementPreview(field) {
         var placement;
         var isSubLabelAbove;
         var subLabelClass;
         var inputContainer;
         var inputCssClass;
-        var sectionAnchors;
+        var inputMap;
+        var groups;
         var markup = '';
 
         if (!isChainedSelectField(field) || !field.inputs || !field.inputs.length) {
@@ -908,31 +1088,24 @@
         isSubLabelAbove = placement === 'above';
         subLabelClass = placement === 'hidden_label' ? 'hidden_sub_label screen-reader-text' : '';
         inputCssClass = field.chainedSelectsAlignment === 'horizontal' ? 'gform-grid-col--size-auto' : '';
-        sectionAnchors = getSectionAnchorMap(field);
+        inputMap = getFieldInputMap(field);
+        groups = getRenderableSectionGroups(field);
 
-        field.inputs.forEach(function (input, index) {
-            var fieldId = input.id;
-            var fieldIdUnderScore = fieldId.replace('.', '_');
-            var htmlId = 'input_' + field.formId + '_' + fieldIdUnderScore;
-            var escapedLabel = escapeHtml(input.label || '');
-            var inputCssClassAttribute = inputCssClass ? ' class="' + inputCssClass + '"' : '';
-            var inputContainerClass = inputCssClass ? 'gform-grid-col ' + inputCssClass : 'gform-grid-col';
-            var options = '<option value="" selected="selected" class="gf_placeholder">' + escapedLabel + '</option>';
-            var inputSubLabel = '<label for="' + htmlId + '" id="' + htmlId + '_label" class="gform-field-label gform-field-label--type-sub ' + subLabelClass + '">' + escapedLabel + '</label>';
-
-            if (sectionAnchors[index]) {
-                markup += '<div class="gfcs-column-section"><div class="gfcs-column-section__label">' + escapeHtml(sectionAnchors[index]) + '</div></div>';
+        groups.forEach(function (group, index) {
+            if (group.pairWithNext && groups[index + 1]) {
+                markup += '<div class="gfcs-column-section-row">';
+                markup += buildPreviewSectionMarkup(field, group, inputMap, inputCssClass, subLabelClass, isSubLabelAbove);
+                markup += buildPreviewSectionMarkup(field, groups[index + 1], inputMap, inputCssClass, subLabelClass, isSubLabelAbove);
+                markup += '</div>';
+                groups[index + 1].pairWithNext = false;
+                return;
             }
 
-            markup += '<span id="' + htmlId + '_container" class="' + inputContainerClass + '">';
-            if (isSubLabelAbove) {
-                markup += inputSubLabel;
+            if (index > 0 && groups[index - 1] && groups[index - 1].pairWithNext) {
+                return;
             }
-            markup += '<select name="input_' + fieldId + '" id="' + htmlId + '"' + inputCssClassAttribute + ' disabled="disabled">' + options + '</select>';
-            if (!isSubLabelAbove) {
-                markup += inputSubLabel;
-            }
-            markup += '</span>\n';
+
+            markup += buildPreviewSectionMarkup(field, group, inputMap, inputCssClass, subLabelClass, isSubLabelAbove);
         });
 
         markup += '<span class="gf_chain_complete" style="display:none;">&nbsp;</span>';
@@ -1040,6 +1213,8 @@
             newSectionTitle: 'New Section',
             addSection: 'Add a section',
             dropColumnsHere: 'Drop columns here',
+            toggleSideBySide: 'Display section next to the following section',
+            sideBySide: 'Side by side',
             renameSection: 'Rename section',
             collapseSection: 'Collapse section',
             expandSection: 'Expand section',

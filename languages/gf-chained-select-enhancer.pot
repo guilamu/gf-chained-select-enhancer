@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: Chained Select Enhancer for Gravity Forms 1.9.0\n"
+"Project-Id-Version: Chained Select Enhancer for Gravity Forms 1.9.1\n"
 "Report-Msgid-Bugs-To: https://github.com/guilamu/gf-chained-select-enhancer\n"
 "POT-Creation-Date: 2026-05-12 15:45+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
@@ -121,6 +121,14 @@ msgstr ""
 
 #: includes/class-gf-chained-select-enhancer.php
 msgid "Drop columns here"
+msgstr ""
+
+#: includes/class-gf-chained-select-enhancer.php
+msgid "Display section next to the following section"
+msgstr ""
+
+#: includes/class-gf-chained-select-enhancer.php
+msgid "Side by side"
 msgstr ""
 
 #: includes/class-gf-chained-select-enhancer.php

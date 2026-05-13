@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: Chained Select Enhancer for Gravity Forms 1.9.0\n"
+"Project-Id-Version: Chained Select Enhancer for Gravity Forms 1.9.1\n"
 "Report-Msgid-Bugs-To: https://github.com/guilamu/gf-chained-select-enhancer\n"
 "POT-Creation-Date: 2026-02-05 12:00+0000\n"
-"PO-Revision-Date: 2026-05-12 22:24+0200\n"
+"PO-Revision-Date: 2026-05-13 14:08+0200\n"
 "Last-Translator: Guilamu <guilamu@gmail.com>\n"
 "Language-Team: French\n"
 "Language: fr_FR\n"
@@ -124,6 +124,14 @@ msgstr "Ajouter une section"
 #: includes/class-gf-chained-select-enhancer.php
 msgid "Drop columns here"
 msgstr "Déposer des colonnes ici"
+
+#: includes/class-gf-chained-select-enhancer.php
+msgid "Display section next to the following section"
+msgstr "Afficher la section à côté de la suivante"
+
+#: includes/class-gf-chained-select-enhancer.php
+msgid "Side by side"
+msgstr "Côte à côte"
 
 #: includes/class-gf-chained-select-enhancer.php
 msgid "Rename section"

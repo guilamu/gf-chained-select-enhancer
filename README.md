@@ -12,6 +12,7 @@ Enhances Gravity Forms Chained Selects with auto-select, left-aligned labels, co
 
 - Set vertical chained selects to full width when long values need more room
 - Group related columns into titled frontend sections from the field settings panel
+- Display consecutive sections side by side from the field settings panel with matching backend and frontend layout
 - Hide unwanted columns while keeping the chained select data structure intact
 
 ## Import & Export
@@ -52,7 +53,7 @@ In the form editor, select your Chained Select field. In the field settings pane
 
 ### How do I place labels on the left or create sections?
 
-In the field editor, choose "To the left of the field" for sub-label placement. Use "Manage Columns" to create titled sections and organize the columns shown on the frontend.
+In the field editor, choose "To the left of the field" for sub-label placement. Use "Manage Columns" to create titled sections and organize the columns shown on the frontend. Use the side-by-side button on a section header to display that section next to the following one.
 
 ### How do I hide columns?
 
@@ -97,6 +98,10 @@ add_filter( 'gform_chainedselects_column_unique_values_limit', function ( $limit
 ```
 
 ## Changelog
+
+### 1.9.1 - 2026-05-13
+- **New:** Added side-by-side section pairing in the column manager, builder preview, and frontend rendering
+- **Improved:** Frontend section heading spacing refined for grouped layouts
 
 ### 1.9.0 - 2026-05-12
 - **New:** Left sub-label placement support for chained select fields with matching backend preview styling

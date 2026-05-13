@@ -1289,7 +1289,8 @@
                     if (field.fullWidth === true) {
                         updateFullWidthPreview(field.id, true);
                     }
-                    applySubLabelPlacementPreview(field);
+                    refreshColumnManagerState(field);
+                    refreshSubLabelPlacementPreview(field);
                 }
             });
         }

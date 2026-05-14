@@ -100,6 +100,11 @@ add_filter( 'gform_chainedselects_column_unique_values_limit', function ( $limit
 
 ## Changelog
 
+### 1.9.4 - 2026-05-14
+- **Improved:** Left-positioned chained select sub-labels now show their full text in a native tooltip on hover
+- **Improved:** Interactive chained select dropdowns now stand out subtly from disabled and unavailable states
+- **Improved:** Tooltip syncing now reapplies after Gravity Forms rerenders, conditional logic updates, and multi-page navigation
+
 ### 1.9.3 - 2026-05-14
 - **Fixed:** Section title editing in the column manager now saves reliably instead of resetting after each character
 - **Improved:** Empty sections now show a delete button in the header instead of a "0 columns" counter

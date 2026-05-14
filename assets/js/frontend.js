@@ -85,26 +85,45 @@
         return true;
     }
 
-    function bootstrapSingleOptionReadonly(attempt) {
+    function syncSubLabelTooltips(scope) {
+        var $scope = scope && scope.jquery ? scope : $(scope || document);
+
+        $scope.find('.ginput_chained_selects_container.gfcs-sub-label-left label.gform-field-label.gform-field-label--type-sub').each(function () {
+            var $label = $(this);
+            var labelText = $.trim($label.text());
+
+            if (!labelText) {
+                return;
+            }
+
+            $label.attr('title', labelText);
+        });
+    }
+
+    function bootstrapFrontendEnhancements(attempt) {
         var retryCount = typeof attempt === 'number' ? attempt : 0;
+
+        syncSubLabelTooltips(document);
 
         if (refreshSingleOptionReadonlyFields(document) || retryCount >= 120) {
             return;
         }
 
         window.setTimeout(function () {
-            bootstrapSingleOptionReadonly(retryCount + 1);
+            bootstrapFrontendEnhancements(retryCount + 1);
         }, 50);
     }
 
-    $(bootstrapSingleOptionReadonly);
+    $(bootstrapFrontendEnhancements);
 
-    $(document).on('gform_post_render gform_post_conditional_logic', function (event, formId) {
+    $(document).on('gform_post_render gform_post_conditional_logic gform_page_loaded', function (event, formId) {
         if (formId) {
             refreshSingleOptionReadonlyFields($('#gform_wrapper_' + formId));
+            syncSubLabelTooltips($('#gform_wrapper_' + formId));
             return;
         }
 
         refreshSingleOptionReadonlyFields(document);
+        syncSubLabelTooltips(document);
     });
 })(jQuery);

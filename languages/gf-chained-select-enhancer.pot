@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: Chained Select Enhancer for Gravity Forms 1.9.3\n"
+"Project-Id-Version: Chained Select Enhancer for Gravity Forms 1.9.4\n"
 "Report-Msgid-Bugs-To: https://github.com/guilamu/gf-chained-select-enhancer\n"
 "POT-Creation-Date: 2026-05-12 15:45+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"

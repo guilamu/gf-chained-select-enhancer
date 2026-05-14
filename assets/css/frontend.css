@@ -198,7 +198,51 @@
     max-inline-size: 100%;
     min-inline-size: 0;
     order: 2;
+    transition: background-color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease, opacity 0.18s ease;
     width: 100%;
+}
+
+.ginput_chained_selects_container > .gform-grid-col > select:not(:disabled):not(.gf_no_options),
+.ginput_chained_selects_container .gfcs-column-section-block > .gform-grid-col > select:not(:disabled):not(.gf_no_options),
+.gravity-theme.gform_wrapper .gfield_chainedselect.ginput_chained_selects_container > .gform-grid-col > select:not(:disabled):not(.gf_no_options),
+.gravity-theme.gform_wrapper .gfield_chainedselect.ginput_chained_selects_container .gfcs-column-section-block > .gform-grid-col > select:not(:disabled):not(.gf_no_options),
+.gform_legacy_markup_wrapper.gform_wrapper .gfield_chainedselect.ginput_chained_selects_container > .gform-grid-col > select:not(:disabled):not(.gf_no_options),
+.gform_legacy_markup_wrapper.gform_wrapper .gfield_chainedselect.ginput_chained_selects_container .gfcs-column-section-block > .gform-grid-col > select:not(:disabled):not(.gf_no_options) {
+    background-color: #fffdf8;
+    border-color: #c9d7c1;
+    box-shadow: 0 0 0 1px rgba(106, 132, 95, 0.08);
+    cursor: pointer;
+}
+
+.ginput_chained_selects_container > .gform-grid-col > select:not(:disabled):not(.gf_no_options):hover,
+.ginput_chained_selects_container .gfcs-column-section-block > .gform-grid-col > select:not(:disabled):not(.gf_no_options):hover,
+.gravity-theme.gform_wrapper .gfield_chainedselect.ginput_chained_selects_container > .gform-grid-col > select:not(:disabled):not(.gf_no_options):hover,
+.gravity-theme.gform_wrapper .gfield_chainedselect.ginput_chained_selects_container .gfcs-column-section-block > .gform-grid-col > select:not(:disabled):not(.gf_no_options):hover,
+.gform_legacy_markup_wrapper.gform_wrapper .gfield_chainedselect.ginput_chained_selects_container > .gform-grid-col > select:not(:disabled):not(.gf_no_options):hover,
+.gform_legacy_markup_wrapper.gform_wrapper .gfield_chainedselect.ginput_chained_selects_container .gfcs-column-section-block > .gform-grid-col > select:not(:disabled):not(.gf_no_options):hover,
+.ginput_chained_selects_container > .gform-grid-col > select:not(:disabled):not(.gf_no_options):focus,
+.ginput_chained_selects_container .gfcs-column-section-block > .gform-grid-col > select:not(:disabled):not(.gf_no_options):focus,
+.gravity-theme.gform_wrapper .gfield_chainedselect.ginput_chained_selects_container > .gform-grid-col > select:not(:disabled):not(.gf_no_options):focus,
+.gravity-theme.gform_wrapper .gfield_chainedselect.ginput_chained_selects_container .gfcs-column-section-block > .gform-grid-col > select:not(:disabled):not(.gf_no_options):focus,
+.gform_legacy_markup_wrapper.gform_wrapper .gfield_chainedselect.ginput_chained_selects_container > .gform-grid-col > select:not(:disabled):not(.gf_no_options):focus,
+.gform_legacy_markup_wrapper.gform_wrapper .gfield_chainedselect.ginput_chained_selects_container .gfcs-column-section-block > .gform-grid-col > select:not(:disabled):not(.gf_no_options):focus {
+    border-color: #98b28b;
+    box-shadow: 0 0 0 3px rgba(152, 178, 139, 0.18);
+}
+
+.ginput_chained_selects_container > .gform-grid-col > select:disabled,
+.ginput_chained_selects_container > .gform-grid-col > select.gf_no_options,
+.ginput_chained_selects_container .gfcs-column-section-block > .gform-grid-col > select:disabled,
+.ginput_chained_selects_container .gfcs-column-section-block > .gform-grid-col > select.gf_no_options,
+.gravity-theme.gform_wrapper .gfield_chainedselect.ginput_chained_selects_container > .gform-grid-col > select:disabled,
+.gravity-theme.gform_wrapper .gfield_chainedselect.ginput_chained_selects_container > .gform-grid-col > select.gf_no_options,
+.gravity-theme.gform_wrapper .gfield_chainedselect.ginput_chained_selects_container .gfcs-column-section-block > .gform-grid-col > select:disabled,
+.gravity-theme.gform_wrapper .gfield_chainedselect.ginput_chained_selects_container .gfcs-column-section-block > .gform-grid-col > select.gf_no_options,
+.gform_legacy_markup_wrapper.gform_wrapper .gfield_chainedselect.ginput_chained_selects_container > .gform-grid-col > select:disabled,
+.gform_legacy_markup_wrapper.gform_wrapper .gfield_chainedselect.ginput_chained_selects_container > .gform-grid-col > select.gf_no_options,
+.gform_legacy_markup_wrapper.gform_wrapper .gfield_chainedselect.ginput_chained_selects_container .gfcs-column-section-block > .gform-grid-col > select:disabled,
+.gform_legacy_markup_wrapper.gform_wrapper .gfield_chainedselect.ginput_chained_selects_container .gfcs-column-section-block > .gform-grid-col > select.gf_no_options {
+    opacity: 0.72;
 }
 
 .gravity-theme.gform_wrapper .gfield_chainedselect.ginput_chained_selects_container.gfcs-sub-label-left.vertical.ginput_complex,

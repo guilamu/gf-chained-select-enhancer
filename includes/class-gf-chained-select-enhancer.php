@@ -1171,6 +1171,27 @@ JS;
     }
 
     /**
+     * Append CSS classes to a DOM element without duplicating existing values.
+     *
+     * @param \DOMElement $element DOM element.
+     * @param string[]     $classes Classes to append.
+     * @return void
+     */
+    private function append_dom_element_classes(\DOMElement $element, array $classes): void
+    {
+        $existing_classes = preg_split('/\s+/', trim((string) $element->getAttribute('class')));
+        $existing_classes = array_filter(is_array($existing_classes) ? $existing_classes : array());
+        $new_classes = array_values(array_filter(array_unique(array_map('sanitize_html_class', $classes))));
+
+        if (empty($new_classes)) {
+            return;
+        }
+
+        $merged_classes = array_values(array_unique(array_merge($existing_classes, $new_classes)));
+        $element->setAttribute('class', implode(' ', $merged_classes));
+    }
+
+    /**
      * Inject section headings and pair layout classes without nesting the column spans.
      *
      * @param string                           $field_content Field markup.
@@ -1190,6 +1211,138 @@ JS;
                 $field_content = $this->add_chained_select_container_class($field_content, 'gfcs-has-paired-sections');
                 break;
             }
+        }
+
+        if (class_exists('DOMDocument') && class_exists('DOMXPath')) {
+            $previous_error_state = libxml_use_internal_errors(true);
+            $dom = new DOMDocument('1.0', 'UTF-8');
+            $load_options = 0;
+
+            if (defined('LIBXML_HTML_NOIMPLIED')) {
+                $load_options |= LIBXML_HTML_NOIMPLIED;
+            }
+
+            if (defined('LIBXML_HTML_NODEFDTD')) {
+                $load_options |= LIBXML_HTML_NODEFDTD;
+            }
+
+            $loaded = $dom->loadHTML('<?xml encoding="utf-8" ?><div id="gfcs-root">' . $field_content . '</div>', $load_options);
+            if ($loaded) {
+                $xpath = new DOMXPath($dom);
+                $root = $xpath->query('//*[@id="gfcs-root"]')->item(0);
+                $container = $xpath->query('.//*[@id="' . sprintf('input_%d_%d', $form_id, $field->id) . '"]', $root)->item(0);
+
+                if ($root instanceof DOMElement && $container instanceof DOMElement) {
+                    $input_nodes = array();
+                    $break_before_indices = array();
+
+                    foreach ($field->inputs as $input) {
+                        if (!is_array($input) || !isset($input['id'])) {
+                            continue;
+                        }
+
+                        $input_container_id = $this->get_input_container_id($form_id, $input);
+                        if ('' === $input_container_id) {
+                            continue;
+                        }
+
+                        $input_node = $xpath->query('.//*[@id="' . $input_container_id . '"]', $container)->item(0);
+                        if ($input_node instanceof DOMElement) {
+                            $input_nodes[(string) $input['id']] = $input_node->cloneNode(true);
+                        }
+                    }
+
+                    foreach ($groups as $index => $group) {
+                        if (!is_array($group) || empty($group['pairWithNext']) || !isset($groups[$index + 1], $groups[$index + 2])) {
+                            continue;
+                        }
+
+                        $break_before_indices[$index + 2] = true;
+                    }
+
+                    $completion_node = $xpath->query('.//*[contains(concat(" ", normalize-space(@class), " "), " gf_chain_complete ")]', $container)->item(0);
+                    $completion_clone = $completion_node instanceof DOMElement ? $completion_node->cloneNode(true) : null;
+
+                    while ($container->firstChild) {
+                        $container->removeChild($container->firstChild);
+                    }
+
+                    foreach ($groups as $index => $group) {
+                        $column_ids = isset($group['columnIds']) && is_array($group['columnIds']) ? $group['columnIds'] : array();
+                        $group_nodes = array();
+                        $title = isset($group['title']) ? trim((string) $group['title']) : '';
+
+                        if (empty($column_ids)) {
+                            continue;
+                        }
+
+                        $is_paired_left = !empty($group['pairWithNext']) && isset($groups[$index + 1]);
+                        $is_paired_right = !$is_paired_left && $index > 0 && !empty($groups[$index - 1]['pairWithNext']);
+                        $layout_modifier = $is_paired_left ? 'paired-left' : ($is_paired_right ? 'paired-right' : 'full');
+
+                        if (!empty($break_before_indices[$index])) {
+                            $break_node = $dom->createElement('div');
+                            $break_node->setAttribute('class', 'gfcs-column-section-break');
+                            $break_node->setAttribute('aria-hidden', 'true');
+                            $group_nodes[] = $break_node;
+                        }
+
+                        if ('' !== $title) {
+                            $section_node = $dom->createElement('div');
+                            $section_node->setAttribute('class', 'gfcs-column-section gfcs-column-section--' . $layout_modifier);
+
+                            $label_node = $dom->createElement('div');
+                            $label_node->setAttribute('class', 'gfcs-column-section__label');
+                            $label_node->appendChild($dom->createTextNode($title));
+
+                            $section_node->appendChild($label_node);
+                            $group_nodes[] = $section_node;
+                        }
+
+                        foreach ($column_ids as $column_id) {
+                            $column_id = (string) $column_id;
+
+                            if (!isset($input_nodes[$column_id])) {
+                                continue;
+                            }
+
+                            $input_node = $input_nodes[$column_id]->cloneNode(true);
+                            if ($input_node instanceof DOMElement) {
+                                $this->append_dom_element_classes(
+                                    $input_node,
+                                    array(
+                                        'gfcs-column-section-input',
+                                        'gfcs-column-section-input--' . $layout_modifier,
+                                    )
+                                );
+                                $group_nodes[] = $input_node;
+                            }
+                        }
+
+                        if (count($group_nodes) === 0 || (!$title && count($group_nodes) === 1 && $group_nodes[0] instanceof DOMElement && 'div' === $group_nodes[0]->tagName && 'gfcs-column-section-break' === $group_nodes[0]->getAttribute('class'))) {
+                            continue;
+                        }
+
+                        foreach ($group_nodes as $group_node) {
+                            $container->appendChild($group_node);
+                        }
+                    }
+
+                    if ($completion_clone instanceof DOMElement) {
+                        $container->appendChild($completion_clone);
+                    }
+
+                    $output = $this->get_dom_inner_html($root);
+
+                    libxml_clear_errors();
+                    libxml_use_internal_errors($previous_error_state);
+
+                    return $output;
+                }
+            }
+
+            libxml_clear_errors();
+            libxml_use_internal_errors($previous_error_state);
         }
 
         $inputs_by_id = array();

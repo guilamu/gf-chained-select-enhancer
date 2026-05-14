@@ -4,7 +4,7 @@ Enhances Gravity Forms Chained Selects with auto-select, left-aligned labels, co
 
 ## Field Behavior
 
-- Choose auto-select when a chained select level has only one available option
+- Choose auto-select when a chained select level has only one available option and optionally make that field read-only
 - Configure display and data options directly in the Gravity Forms editor for existing Chained Select fields
 - Match backend preview and frontend rendering for left-positioned sub-labels and grouped sections
 
@@ -49,7 +49,7 @@ Enhances Gravity Forms Chained Selects with auto-select, left-aligned labels, co
 
 ### How do I enable auto-select?
 
-In the form editor, select your Chained Select field. In the field settings panel, check "Automatically select when only one option is available".
+In the form editor, select your Chained Select field. In the field settings panel, check "Automatically select when only one option is available". You can also enable the read-only option right below it to lock fields that have only one available choice.
 
 ### How do I place labels on the left or create sections?
 
@@ -84,7 +84,8 @@ add_filter( 'gform_chainedselects_column_unique_values_limit', function ( $limit
 │   │   ├── admin.css                 # Form editor and manager styles
 │   │   └── frontend.css              # Frontend layout and section styles
 │   └── js
-│       └── admin.js                  # Form editor settings and preview scripts
+│       ├── admin.js                  # Form editor settings and preview scripts
+│       └── frontend.js               # Frontend chained select behavior enhancements
 ├── includes
 │   ├── class-gf-chained-select-enhancer.php  # Main enhancer functionality
 │   ├── class-github-updater.php      # GitHub auto-updates
@@ -98,6 +99,10 @@ add_filter( 'gform_chainedselects_column_unique_values_limit', function ( $limit
 ```
 
 ## Changelog
+
+### 1.9.2 - 2026-05-14
+- **New:** Added a setting to make a chained select field read-only when its only available option is auto-selected
+- **Improved:** Empty chained select fields now display "No value" instead of "No options"
 
 ### 1.9.1 - 2026-05-13
 - **New:** Added side-by-side section pairing in the column manager, builder preview, and frontend rendering

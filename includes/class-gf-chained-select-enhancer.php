@@ -78,7 +78,7 @@ class GFCS_Chained_Select_Enhancer
 
         // Frontend hooks.
         add_filter('gform_field_content', array($this, 'add_auto_select_property'), 10, 5);
-        add_filter('gform_chained_selects_input_choices', array($this, 'auto_select_only_choice'), 10, 3);
+        add_filter('gform_chained_selects_input_choices', array($this, 'auto_select_only_choice'), 10, 7);
         add_filter('gform_pre_render', array($this, 'enqueue_field_css'), 10, 1);
 
         // AJAX handler.
@@ -241,12 +241,23 @@ JS;
         $frontend_css_version = file_exists($this->plugin_path . 'assets/css/frontend.css')
             ? (string) filemtime($this->plugin_path . 'assets/css/frontend.css')
             : $this->version;
+        $frontend_js_version = file_exists($this->plugin_path . 'assets/js/frontend.js')
+            ? (string) filemtime($this->plugin_path . 'assets/js/frontend.js')
+            : $this->version;
 
         wp_enqueue_style(
             'gfcs-frontend',
             $this->plugin_url . 'assets/css/frontend.css',
             array(),
             $frontend_css_version
+        );
+
+        wp_enqueue_script(
+            'gfcs-frontend-script',
+            $this->plugin_url . 'assets/js/frontend.js',
+            array('jquery'),
+            $frontend_js_version,
+            true
         );
     }
 
@@ -267,6 +278,12 @@ JS;
             <input type="checkbox" id="field_auto_select" onclick="SetFieldProperty('autoSelectOnly', this.checked);" />
             <label for="field_auto_select" class="inline">
                 <?php esc_html_e('Automatically select when only one option is available', 'gf-chained-select-enhancer'); ?>
+            </label>
+        </li>
+        <li class="auto_select_single_readonly_setting field_setting">
+            <input type="checkbox" id="field_auto_select_single_readonly" onclick="SetFieldProperty('autoSelectSingleReadOnly', this.checked);" />
+            <label for="field_auto_select_single_readonly" class="inline">
+                <?php esc_html_e('Make the field read-only when its only available option is auto-selected', 'gf-chained-select-enhancer'); ?>
             </label>
         </li>
         <li class="full_width_setting field_setting">
@@ -316,7 +333,7 @@ JS;
             // Register field settings with Gravity Forms editor
             // This must be inline as it needs to execute at the correct GF initialization time
             if (typeof fieldSettings !== 'undefined') {
-                fieldSettings.chainedselect += ', .auto_select_setting, .hide_columns_setting, .full_width_setting, .gfcs_sub_label_width_setting, .csv_export_setting';
+                fieldSettings.chainedselect += ', .auto_select_setting, .auto_select_single_readonly_setting, .hide_columns_setting, .full_width_setting, .gfcs_sub_label_width_setting, .csv_export_setting';
             }
 
             (function($) {
@@ -384,6 +401,10 @@ JS;
 
         if (!empty($field->autoSelectOnly)) {
             $field_content = str_replace('<select', '<select data-auto-select-only="true"', $field_content);
+
+            if (!empty($field->autoSelectSingleReadOnly)) {
+                $field_content = str_replace('<select', '<select data-gfcs-single-option-readonly="true"', $field_content);
+            }
         }
 
         if ($this->is_left_sub_label_placement($field, (int) $form_id)) {
@@ -1276,24 +1297,57 @@ JS;
     }
 
     /**
-     * Auto-select when only one choice is available.
+     * Auto-select single choices and customize the empty-choice fallback text.
      *
-     * @param array  $choices Field choices.
-     * @param array  $form    Form object.
-     * @param object $field   Field object.
+     * @param array       $choices          Field choices.
+     * @param array|int   $form             Form object or form ID.
+     * @param object      $field            Field object.
+     * @param string|bool $input_id         Current input ID.
+     * @param mixed       $full_chain_value Full chained select value map.
+     * @param mixed       $value            Current value.
+     * @param int         $index            Input index.
      * @return array Modified choices.
      */
-    public function auto_select_only_choice($choices, $form, $field): array
+    public function auto_select_only_choice($choices, $form, $field, $input_id = false, $full_chain_value = null, $value = null, int $index = 0): array
     {
-        if (!is_object($field) || empty($field->autoSelectOnly)) {
+        $previous_input_value = null;
+
+        if (!is_object($field)) {
             return $choices;
         }
 
-        if (is_array($choices) && 1 === count($choices)) {
+        if (!empty($field->autoSelectOnly) && is_array($choices) && 1 === count($choices)) {
             $choices[0]['isSelected'] = true;
         }
 
-        return $choices;
+        if (!empty($choices) || !is_string($input_id) || !is_array($full_chain_value)) {
+            return $choices;
+        }
+
+        $input_id_bits = explode('.', $input_id);
+        $field_id = isset($input_id_bits[0]) ? (string) $input_id_bits[0] : '';
+        $input_index = isset($input_id_bits[1]) ? (int) $input_id_bits[1] : 0;
+
+        if ('' === $field_id || $input_index <= 1) {
+            return $choices;
+        }
+
+        $previous_input_id = sprintf('%s.%d', $field_id, $input_index - 1);
+        $previous_input_value = array_key_exists($previous_input_id, $full_chain_value)
+            ? $full_chain_value[$previous_input_id]
+            : null;
+        if (empty($previous_input_value)) {
+            return $choices;
+        }
+
+        return array(
+            array(
+                'text' => wp_strip_all_tags(__('No value', 'gf-chained-select-enhancer')),
+                'value' => '',
+                'isSelected' => true,
+                'noOptions' => true,
+            ),
+        );
     }
 
     /**

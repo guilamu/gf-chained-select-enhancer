@@ -1,6 +1,6 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: Chained Select Enhancer for Gravity Forms 1.9.1\n"
+"Project-Id-Version: Chained Select Enhancer for Gravity Forms 1.9.2\n"
 "Report-Msgid-Bugs-To: https://github.com/guilamu/gf-chained-select-enhancer\n"
 "POT-Creation-Date: 2026-05-12 15:45+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
@@ -29,6 +29,14 @@ msgstr ""
 
 #: includes/class-gf-chained-select-enhancer.php
 msgid "Automatically select when only one option is available"
+msgstr ""
+
+#: includes/class-gf-chained-select-enhancer.php
+msgid "Make the field read-only when its only available option is auto-selected"
+msgstr ""
+
+#: includes/class-gf-chained-select-enhancer.php
+msgid "No value"
 msgstr ""
 
 #: includes/class-gf-chained-select-enhancer.php

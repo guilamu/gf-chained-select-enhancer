@@ -1017,6 +1017,23 @@
         }
     }
 
+    function refreshAutoSelectSingleReadonlySetting(field) {
+        var checkbox = document.getElementById('field_auto_select_single_readonly');
+        var setting = document.querySelector('.auto_select_single_readonly_setting');
+        var isAutoSelectEnabled = !!(field && field.autoSelectOnly === true);
+
+        if (!checkbox) {
+            return;
+        }
+
+        checkbox.checked = !!(field && field.autoSelectSingleReadOnly === true);
+        checkbox.disabled = !isAutoSelectEnabled;
+
+        if (setting) {
+            setting.style.opacity = isAutoSelectEnabled ? '' : '0.55';
+        }
+    }
+
     function buildPreviewInputMarkup(field, input, inputCssClass, subLabelClass, isSubLabelAbove) {
         var fieldId = input.id;
         var fieldIdUnderScore = fieldId.replace('.', '_');
@@ -1236,6 +1253,7 @@
                 ensureLeftSubLabelOption();
                 refreshSubLabelWidthSetting(field);
                 $('#field_auto_select').prop('checked', field.autoSelectOnly === true);
+                refreshAutoSelectSingleReadonlySetting(field);
                 $('#field_full_width').prop('checked', field.fullWidth === true);
                 $('#field_hide_columns').val(field.hideColumns || '');
                 $('#field_column_sections').val(field.columnSections || '');
@@ -1248,6 +1266,27 @@
                 updateFullWidthPreview(field.id, field.fullWidth === true);
                 refreshSubLabelPlacementPreview(field);
             }
+        });
+
+        $(document).on('change', '#field_auto_select', function () {
+            var field = typeof GetSelectedField === 'function' ? GetSelectedField() : null;
+
+            if (!isChainedSelectField(field)) {
+                return;
+            }
+
+            field.autoSelectOnly = this.checked;
+            refreshAutoSelectSingleReadonlySetting(field);
+        });
+
+        $(document).on('change', '#field_auto_select_single_readonly', function () {
+            var field = typeof GetSelectedField === 'function' ? GetSelectedField() : null;
+
+            if (!isChainedSelectField(field)) {
+                return;
+            }
+
+            field.autoSelectSingleReadOnly = this.checked;
         });
 
         $(document).on('change', '#field_sub_label_placement', function () {

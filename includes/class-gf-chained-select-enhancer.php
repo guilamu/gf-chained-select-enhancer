@@ -203,6 +203,7 @@ JS;
             'toggleSideBySide' => __('Display section next to the following section', 'gf-chained-select-enhancer'),
             'sideBySide' => __('Side by side', 'gf-chained-select-enhancer'),
             'renameSection' => __('Rename section', 'gf-chained-select-enhancer'),
+            'deleteEmptySection' => __('Delete empty section', 'gf-chained-select-enhancer'),
             'collapseSection' => __('Collapse section', 'gf-chained-select-enhancer'),
             'expandSection' => __('Expand section', 'gf-chained-select-enhancer'),
             'reorderColumn' => __('Reorder column', 'gf-chained-select-enhancer'),

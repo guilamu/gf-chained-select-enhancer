@@ -60,6 +60,10 @@
     white-space: nowrap;
 }
 
+.hide_columns_setting .gfcs-section-meta--action {
+    display: flex;
+}
+
 .hide_columns_setting .gfcs-section-actions {
     display: flex;
     gap: 8px;

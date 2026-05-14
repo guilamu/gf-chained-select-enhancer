@@ -478,6 +478,44 @@
         }
     }
 
+    function removeEmptyGroup(field, groupId) {
+        var state = field && field._gfcsColumnManagerUi;
+        var groupIndex = -1;
+
+        if (!state || !groupId) {
+            return;
+        }
+
+        state.groups = sanitizeSectionGroups(state.groups);
+
+        state.groups.forEach(function (group, index) {
+            if (group.id === groupId) {
+                groupIndex = index;
+            }
+        });
+
+        if (groupIndex === -1 || state.groups[groupIndex].columnIds.length) {
+            return;
+        }
+
+        if (groupIndex > 0 && state.groups[groupIndex - 1] && state.groups[groupIndex - 1].pairWithNext) {
+            state.groups[groupIndex - 1].pairWithNext = false;
+        }
+
+        delete state.collapsedGroupIds[groupId];
+
+        if (state.editingGroupId === groupId) {
+            state.editingGroupId = '';
+        }
+
+        state.groups.splice(groupIndex, 1);
+        state.groups = sanitizeSectionGroups(state.groups);
+
+        syncColumnManagerToField(field);
+        renderColumnToggles(field);
+        refreshSubLabelPlacementPreview(field);
+    }
+
     function moveColumnBetweenGroups(field, columnId, targetGroupId, targetColumnId, position) {
         var state = field._gfcsColumnManagerUi;
         var targetGroup = null;
@@ -686,7 +724,6 @@
             });
             titleInput.addEventListener('input', function () {
                 group.title = this.value;
-                syncColumnManagerToField(field);
                 refreshSubLabelPlacementPreview(field);
             });
             titleInput.addEventListener('keydown', function (event) {
@@ -722,7 +759,27 @@
         }).length;
 
         meta.className = 'gfcs-section-meta';
-        meta.textContent = formatSectionMeta(group.columnIds.length, hiddenCount);
+
+        if (group.columnIds.length === 0) {
+            var deleteButton = document.createElement('button');
+
+            meta.classList.add('gfcs-section-meta--action');
+
+            deleteButton.type = 'button';
+            deleteButton.className = 'gfcs-section-action gfcs-section-delete';
+            deleteButton.setAttribute('aria-label', settings.deleteEmptySection);
+            deleteButton.title = settings.deleteEmptySection;
+            deleteButton.innerHTML = '<span class="dashicons dashicons-trash" aria-hidden="true"></span>';
+            deleteButton.addEventListener('click', function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+                removeEmptyGroup(field, group.id);
+            });
+
+            meta.appendChild(deleteButton);
+        } else {
+            meta.textContent = formatSectionMeta(group.columnIds.length, hiddenCount);
+        }
 
         actions.className = 'gfcs-section-actions';
 
@@ -1233,6 +1290,7 @@
             toggleSideBySide: 'Display section next to the following section',
             sideBySide: 'Side by side',
             renameSection: 'Rename section',
+            deleteEmptySection: 'Delete empty section',
             collapseSection: 'Collapse section',
             expandSection: 'Expand section',
             reorderColumn: 'Reorder column',

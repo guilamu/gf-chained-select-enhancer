@@ -100,6 +100,10 @@ add_filter( 'gform_chainedselects_column_unique_values_limit', function ( $limit
 
 ## Changelog
 
+### 1.9.3 - 2026-05-14
+- **Fixed:** Section title editing in the column manager now saves reliably instead of resetting after each character
+- **Improved:** Empty sections now show a delete button in the header instead of a "0 columns" counter
+
 ### 1.9.2 - 2026-05-14
 - **New:** Added a setting to make a chained select field read-only when its only available option is auto-selected
 - **Improved:** Empty chained select fields now display "No value" instead of "No options"

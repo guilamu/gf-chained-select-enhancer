@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: Chained Select Enhancer for Gravity Forms 1.9.2\n"
+"Project-Id-Version: Chained Select Enhancer for Gravity Forms 1.9.3\n"
 "Report-Msgid-Bugs-To: https://github.com/guilamu/gf-chained-select-enhancer\n"
 "POT-Creation-Date: 2026-02-05 12:00+0000\n"
-"PO-Revision-Date: 2026-05-14 09:28+0200\n"
+"PO-Revision-Date: 2026-05-14 09:57+0200\n"
 "Last-Translator: Guilamu <guilamu@gmail.com>\n"
 "Language-Team: French\n"
 "Language: fr_FR\n"
@@ -40,6 +40,10 @@ msgstr "Rendre le champ en lecture seule lorsque sa seule option disponible est 
 #: includes/class-gf-chained-select-enhancer.php
 msgid "No value"
 msgstr "Aucune valeur"
+
+#: includes/class-gf-chained-select-enhancer.php
+msgid "Delete empty section"
+msgstr "Supprimer la section vide"
 
 #: includes/class-gf-chained-select-enhancer.php
 msgid "Make vertical chained select full width"

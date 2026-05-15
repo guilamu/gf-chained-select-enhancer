@@ -50,8 +50,24 @@
         });
     }
 
+    function getFieldInputIndexLookup(field) {
+        var inputIndexLookup = {};
+
+        getFieldInputs(field).forEach(function (input, index) {
+            inputIndexLookup[String(input.id)] = index;
+        });
+
+        return inputIndexLookup;
+    }
+
     function escapeHtml(value) {
         return $('<div />').text(value || '').html();
+    }
+
+    function formatSettingString(template, firstValue, secondValue) {
+        return String(template || '')
+            .replace(/%1\$s/g, String(firstValue || ''))
+            .replace(/%2\$s/g, String(secondValue || ''));
     }
 
     function createSectionId() {
@@ -213,6 +229,156 @@
         });
     }
 
+    function cloneSectionGroups(groups) {
+        return sanitizeSectionGroups(groups).map(function (group) {
+            return {
+                id: String(group.id || createSectionId()),
+                title: String(group.title || ''),
+                columnIds: Array.isArray(group.columnIds) ? group.columnIds.slice() : [],
+                pairWithNext: !!group.pairWithNext
+            };
+        });
+    }
+
+    function applyColumnMoveToGroups(groups, columnId, targetGroupId, targetColumnId, position) {
+        var targetGroup = null;
+        var targetIndex;
+
+        if (!Array.isArray(groups) || !columnId || !targetGroupId) {
+            return false;
+        }
+
+        groups.forEach(function (group) {
+            var currentIndex = group.columnIds.indexOf(columnId);
+
+            if (currentIndex !== -1) {
+                group.columnIds.splice(currentIndex, 1);
+            }
+
+            if (group.id === targetGroupId) {
+                targetGroup = group;
+            }
+        });
+
+        if (!targetGroup) {
+            return false;
+        }
+
+        if (!targetColumnId || position === 'append') {
+            targetGroup.columnIds.push(columnId);
+            return true;
+        }
+
+        targetIndex = targetGroup.columnIds.indexOf(targetColumnId);
+
+        if (targetIndex === -1) {
+            targetGroup.columnIds.push(columnId);
+            return true;
+        }
+
+        if (position === 'after') {
+            targetIndex += 1;
+        }
+
+        targetGroup.columnIds.splice(targetIndex, 0, columnId);
+
+        return true;
+    }
+
+    function getColumnDisplayLabel(field, columnId) {
+        var input = getFieldInputMap(field)[String(columnId)];
+        var label = input && input.label ? String(input.label).trim() : '';
+
+        return label || String(columnId || '');
+    }
+
+    function buildColumnOrderError(field, columnId, relatedColumnId, relation, isTransient) {
+        var error = {
+            columnId: String(columnId || ''),
+            relatedColumnId: String(relatedColumnId || ''),
+            columnIds: [String(columnId || ''), String(relatedColumnId || '')],
+            relation: relation === 'before' ? 'before' : 'after',
+            message: formatSettingString(
+                relation === 'before' ? settings.invalidOrderBefore : settings.invalidOrderAfter,
+                getColumnDisplayLabel(field, columnId),
+                getColumnDisplayLabel(field, relatedColumnId)
+            )
+        };
+
+        if (isTransient) {
+            error.transient = true;
+        }
+
+        return error;
+    }
+
+    function findColumnOrderError(field, groups, preferredColumnId, isTransient) {
+        var indexLookup = getFieldInputIndexLookup(field);
+        var flattened = [];
+        var seenLookup = {};
+        var preferredId = preferredColumnId ? String(preferredColumnId) : '';
+        var preferredIndex;
+        var preferredPosition;
+        var leftIndex;
+        var rightIndex;
+        var outerIndex;
+        var innerIndex;
+
+        if (!field || !Array.isArray(groups)) {
+            return null;
+        }
+
+        groups.forEach(function (group) {
+            (Array.isArray(group && group.columnIds) ? group.columnIds : []).forEach(function (columnId) {
+                var normalizedColumnId = String(columnId || '');
+
+                if (
+                    !normalizedColumnId
+                    || !Object.prototype.hasOwnProperty.call(indexLookup, normalizedColumnId)
+                    || seenLookup[normalizedColumnId]
+                ) {
+                    return;
+                }
+
+                seenLookup[normalizedColumnId] = true;
+                flattened.push(normalizedColumnId);
+            });
+        });
+
+        if (!flattened.length) {
+            return null;
+        }
+
+        if (preferredId && Object.prototype.hasOwnProperty.call(indexLookup, preferredId)) {
+            preferredIndex = indexLookup[preferredId];
+            preferredPosition = flattened.indexOf(preferredId);
+
+            if (preferredPosition !== -1) {
+                for (rightIndex = preferredPosition + 1; rightIndex < flattened.length; rightIndex += 1) {
+                    if (indexLookup[flattened[rightIndex]] < preferredIndex) {
+                        return buildColumnOrderError(field, preferredId, flattened[rightIndex], 'after', isTransient);
+                    }
+                }
+
+                for (leftIndex = preferredPosition - 1; leftIndex >= 0; leftIndex -= 1) {
+                    if (indexLookup[flattened[leftIndex]] > preferredIndex) {
+                        return buildColumnOrderError(field, preferredId, flattened[leftIndex], 'before', isTransient);
+                    }
+                }
+            }
+        }
+
+        for (outerIndex = 0; outerIndex < flattened.length - 1; outerIndex += 1) {
+            for (innerIndex = outerIndex + 1; innerIndex < flattened.length; innerIndex += 1) {
+                if (indexLookup[flattened[outerIndex]] > indexLookup[flattened[innerIndex]]) {
+                    return buildColumnOrderError(field, flattened[outerIndex], flattened[innerIndex], 'after', isTransient);
+                }
+            }
+        }
+
+        return null;
+    }
+
     function normalizeSectionGroups(field) {
         var inputIds = getFieldInputIds(field);
         var decoded = parseColumnSections(field);
@@ -275,17 +441,97 @@
         return sanitizeSectionGroups(groups);
     }
 
+    function buildCanonicalSectionGroups(field, groups) {
+        var inputIds = getFieldInputIds(field);
+        var inputLookup = getFieldInputMap(field);
+        var sourceGroups = sanitizeSectionGroups(groups);
+        var remainingIds = inputIds.slice();
+        var seenLookup = {};
+        var rebuiltGroups = [];
+
+        if (!sourceGroups.length) {
+            return [{
+                id: createSectionId(),
+                title: '',
+                columnIds: inputIds.slice(),
+                pairWithNext: false
+            }];
+        }
+
+        sourceGroups.forEach(function (group, index) {
+            var requestedCount = 0;
+            var assignedColumnIds;
+
+            (Array.isArray(group.columnIds) ? group.columnIds : []).forEach(function (rawColumnId) {
+                var columnId = String(rawColumnId || '');
+
+                if (!columnId || !inputLookup[columnId] || seenLookup[columnId]) {
+                    return;
+                }
+
+                seenLookup[columnId] = true;
+                requestedCount += 1;
+            });
+
+            if (index === sourceGroups.length - 1) {
+                assignedColumnIds = remainingIds.splice(0, remainingIds.length);
+            } else {
+                assignedColumnIds = remainingIds.splice(0, Math.min(requestedCount, remainingIds.length));
+            }
+
+            rebuiltGroups.push({
+                id: String(group.id || createSectionId()),
+                title: String(group.title || ''),
+                columnIds: assignedColumnIds,
+                pairWithNext: !!group.pairWithNext
+            });
+        });
+
+        if (remainingIds.length) {
+            if (rebuiltGroups.length) {
+                rebuiltGroups[rebuiltGroups.length - 1].columnIds = rebuiltGroups[rebuiltGroups.length - 1].columnIds.concat(remainingIds);
+            } else {
+                rebuiltGroups.push({
+                    id: createSectionId(),
+                    title: '',
+                    columnIds: remainingIds.slice(),
+                    pairWithNext: false
+                });
+            }
+        }
+
+        return sanitizeSectionGroups(rebuiltGroups);
+    }
+
     function buildColumnManagerState(field, previousState) {
+        var groups = normalizeSectionGroups(field);
+        var detectedOrderError = findColumnOrderError(field, groups);
+        var lastValidGroups = previousState && Array.isArray(previousState.lastValidGroups)
+            ? cloneSectionGroups(previousState.lastValidGroups)
+            : cloneSectionGroups(detectedOrderError ? buildCanonicalSectionGroups(field, groups) : groups);
+
         return {
-            groups: normalizeSectionGroups(field),
+            groups: groups,
             hiddenById: getHiddenColumnIdLookup(field),
             collapsedGroupIds: previousState && previousState.collapsedGroupIds ? previousState.collapsedGroupIds : {},
-            editingGroupId: previousState && previousState.editingGroupId ? previousState.editingGroupId : ''
+            editingGroupId: previousState && previousState.editingGroupId ? previousState.editingGroupId : '',
+            orderError: previousState && previousState.orderError ? previousState.orderError : detectedOrderError,
+            lastValidGroups: lastValidGroups
         };
     }
 
     function refreshColumnManagerState(field) {
+        var detectedOrderError;
+
         field._gfcsColumnManagerUi = buildColumnManagerState(field, field._gfcsColumnManagerUi || null);
+
+        detectedOrderError = findColumnOrderError(field, field._gfcsColumnManagerUi.groups);
+
+        if (detectedOrderError && Array.isArray(field._gfcsColumnManagerUi.lastValidGroups) && field._gfcsColumnManagerUi.lastValidGroups.length) {
+            field._gfcsColumnManagerUi.groups = cloneSectionGroups(field._gfcsColumnManagerUi.lastValidGroups);
+            syncColumnManagerToField(field);
+        }
+
         return field._gfcsColumnManagerUi;
     }
 
@@ -295,12 +541,26 @@
         var indexById = {};
         var hiddenIndices = [];
         var payloadGroups = [];
+        var orderError;
 
         if (!state) {
             return;
         }
 
         state.groups = sanitizeSectionGroups(state.groups);
+        orderError = findColumnOrderError(field, state.groups);
+
+        if (orderError) {
+            state.orderError = orderError;
+
+            if (Array.isArray(state.lastValidGroups) && state.lastValidGroups.length) {
+                state.groups = cloneSectionGroups(state.lastValidGroups);
+            } else {
+                state.groups = buildCanonicalSectionGroups(field, state.groups);
+            }
+
+            return;
+        }
 
         inputs.forEach(function (input, index) {
             indexById[String(input.id)] = index;
@@ -326,6 +586,9 @@
         hiddenIndices.sort(function (left, right) {
             return left - right;
         });
+
+        state.lastValidGroups = cloneSectionGroups(state.groups);
+        state.orderError = null;
 
         field.columnSections = JSON.stringify({
             version: 2,
@@ -518,43 +781,29 @@
 
     function moveColumnBetweenGroups(field, columnId, targetGroupId, targetColumnId, position) {
         var state = field._gfcsColumnManagerUi;
-        var targetGroup = null;
+        var candidateGroups;
+        var orderError;
 
         if (!state || !columnId || !targetGroupId) {
             return;
         }
 
-        state.groups.forEach(function (group) {
-            var currentIndex = group.columnIds.indexOf(columnId);
+        candidateGroups = cloneSectionGroups(state.groups);
 
-            if (currentIndex !== -1) {
-                group.columnIds.splice(currentIndex, 1);
-            }
-
-            if (group.id === targetGroupId) {
-                targetGroup = group;
-            }
-        });
-
-        if (!targetGroup) {
+        if (!applyColumnMoveToGroups(candidateGroups, columnId, targetGroupId, targetColumnId, position)) {
             return;
         }
 
-        if (!targetColumnId || position === 'append') {
-            targetGroup.columnIds.push(columnId);
-        } else {
-            var targetIndex = targetGroup.columnIds.indexOf(targetColumnId);
-
-            if (targetIndex === -1) {
-                targetGroup.columnIds.push(columnId);
-            } else {
-                if (position === 'after') {
-                    targetIndex += 1;
-                }
-
-                targetGroup.columnIds.splice(targetIndex, 0, columnId);
-            }
+        orderError = findColumnOrderError(field, candidateGroups, columnId, true);
+        if (orderError) {
+            state.orderError = orderError;
+            clearManagerDragIndicators();
+            dragState = null;
+            renderColumnToggles(field);
+            return;
         }
+
+        state.groups = candidateGroups;
 
         syncColumnManagerToField(field);
         clearManagerDragIndicators();
@@ -566,6 +815,7 @@
     function createColumnRow(field, group, columnId) {
         var state = field._gfcsColumnManagerUi;
         var input = getFieldInputMap(field)[columnId];
+        var orderError = state && state.orderError ? state.orderError : null;
         var row;
         var handle;
         var label;
@@ -586,6 +836,14 @@
 
         if (state.hiddenById[columnId]) {
             row.classList.add('is-hidden');
+        }
+
+        if (orderError && Array.isArray(orderError.columnIds) && orderError.columnIds.indexOf(columnId) !== -1) {
+            row.classList.add('is-order-error');
+
+            if (orderError.columnId === columnId) {
+                row.classList.add('is-order-error-primary');
+            }
         }
 
         handle = document.createElement('button');
@@ -682,6 +940,7 @@
 
     function createSectionCard(field, group, index) {
         var state = field._gfcsColumnManagerUi;
+        var orderError = state && state.orderError ? state.orderError : null;
         var card = document.createElement('section');
         var header = document.createElement('div');
         var heading = document.createElement('div');
@@ -697,6 +956,13 @@
         var canPair = isPaired || index < state.groups.length - 1;
 
         card.className = 'gfcs-section-card';
+
+        if (orderError && Array.isArray(orderError.columnIds) && group.columnIds.some(function (columnId) {
+            return orderError.columnIds.indexOf(columnId) !== -1;
+        })) {
+            card.classList.add('has-order-error');
+        }
+
         if (state.collapsedGroupIds[group.id]) {
             card.classList.add('is-collapsed');
         }
@@ -935,9 +1201,78 @@
         return button;
     }
 
+    function createOrderErrorNotice(orderError) {
+        var notice = document.createElement('div');
+
+        notice.className = 'gfcs-order-error';
+        notice.setAttribute('role', 'alert');
+        notice.textContent = orderError.message;
+
+        return notice;
+    }
+
+    function ensureImportChoicesSourceFileState(field) {
+        window.setTimeout(function () {
+            var progress = document.getElementById('gfcs-progress');
+            var drop = document.getElementById('gfcs-drop');
+            var sample = document.getElementById('gfcs-sample');
+            var existingFallback;
+            var previewMarker;
+            var fallback;
+            var label;
+            var name;
+            var hint;
+            var fileName;
+
+            if (!isChainedSelectField(field) || !field || !field.gfcsFile || field.gfcsFilterEnabled || !progress || !drop) {
+                return;
+            }
+
+            drop.style.display = '';
+
+            if (sample) {
+                sample.style.display = '';
+            }
+
+            previewMarker = progress.querySelector('.gfcs-remove, .gfcs-source-message, [class*="gfcs-status-"]');
+            existingFallback = progress.querySelector('.gfcs-enhancer-source-file');
+
+            if (previewMarker || existingFallback) {
+                return;
+            }
+
+            fileName = String(field.gfcsFile.name || field.gfcsFile.uploaded_filename || '').trim();
+
+            if (!fileName) {
+                return;
+            }
+
+            fallback = document.createElement('div');
+            fallback.className = 'gfcs-enhancer-source-file';
+
+            label = document.createElement('div');
+            label.className = 'gfcs-enhancer-source-file__label';
+            label.textContent = settings.currentSourceFile;
+
+            name = document.createElement('div');
+            name.className = 'gfcs-enhancer-source-file__name';
+            name.textContent = fileName;
+
+            hint = document.createElement('div');
+            hint.className = 'gfcs-enhancer-source-file__hint';
+            hint.textContent = settings.replaceSourceFileHint;
+
+            fallback.appendChild(label);
+            fallback.appendChild(name);
+            fallback.appendChild(hint);
+            progress.appendChild(fallback);
+        }, 0);
+    }
+
     function renderColumnToggles(field) {
         var container = document.getElementById('gfcs_column_toggles');
         var managerState;
+        var detectedOrderError;
 
         if (!container) {
             return;
@@ -958,6 +1293,12 @@
 
         managerState = field._gfcsColumnManagerUi || refreshColumnManagerState(field);
         managerState.groups = sanitizeSectionGroups(managerState.groups);
+        detectedOrderError = findColumnOrderError(field, managerState.groups);
+        managerState.orderError = detectedOrderError || (managerState.orderError && managerState.orderError.transient ? managerState.orderError : null);
+
+        if (managerState.orderError && managerState.orderError.message) {
+            container.appendChild(createOrderErrorNotice(managerState.orderError));
+        }
 
         managerState.groups.forEach(function (group, index) {
             container.appendChild(createSectionCard(field, group, index));
@@ -1294,6 +1635,10 @@
             collapseSection: 'Collapse section',
             expandSection: 'Expand section',
             reorderColumn: 'Reorder column',
+            invalidOrderAfter: 'Line "%1$s" should be after "%2$s".',
+            invalidOrderBefore: 'Line "%1$s" should be before "%2$s".',
+            currentSourceFile: 'Current source file',
+            replaceSourceFileHint: 'Select a file below to replace it.',
             nonce: '',
             ajaxurl: '',
             selectFieldFirst: 'Please select a chained select field first',
@@ -1323,6 +1668,7 @@
                 renderColumnToggles(field);
                 updateFullWidthPreview(field.id, field.fullWidth === true);
                 refreshSubLabelPlacementPreview(field);
+                ensureImportChoicesSourceFileState(field);
             }
         });
 
@@ -1388,6 +1734,7 @@
                     }
                     refreshColumnManagerState(field);
                     refreshSubLabelPlacementPreview(field);
+                    ensureImportChoicesSourceFileState(field);
                 }
             });
         }

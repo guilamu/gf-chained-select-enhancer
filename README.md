@@ -100,9 +100,14 @@ add_filter( 'gform_chainedselects_column_unique_values_limit', function ( $limit
 
 ## Changelog
 
+### 1.9.6 - 2026-05-15
+- **Fixed:** Invalid backend line reordering can no longer be persisted in the column manager
+- **Improved:** Previously saved invalid column orders are now restored to a valid native chain order when the field settings load
+
 ### 1.9.5 - 2026-05-15
 - **Improved:** The enhancer now only boots its runtime when both Gravity Forms and the Gravity Forms Chained Selects Add-On are available
 - **Added:** Admins now see a clear dashboard warning when Gravity Forms is active but the Chained Selects add-on is missing, instead of the enhancer failing silently
+- **Fixed:** Invalid line reordering is now blocked in the backend column manager, with a clear inline explanation and red highlighting for conflicting lines
 
 ### 1.9.4 - 2026-05-14
 - **Improved:** Left-positioned chained select sub-labels now show their full text in a native tooltip on hover

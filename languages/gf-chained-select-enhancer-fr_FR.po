@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: Chained Select Enhancer for Gravity Forms 1.9.5\n"
+"Project-Id-Version: Chained Select Enhancer for Gravity Forms 1.9.6\n"
 "Report-Msgid-Bugs-To: https://github.com/guilamu/gf-chained-select-enhancer\n"
-"POT-Creation-Date: 2026-05-15 18:00+0000\n"
-"PO-Revision-Date: 2026-05-15 10:26+0200\n"
+"POT-Creation-Date: 2026-05-15 18:30+0000\n"
+"PO-Revision-Date: 2026-05-15 12:34+0200\n"
 "Last-Translator: Guilamu <guilamu@gmail.com>\n"
 "Language-Team: French\n"
 "Language: fr_FR\n"
@@ -164,6 +164,22 @@ msgstr "Déplier la section"
 #: includes/class-gf-chained-select-enhancer.php
 msgid "Reorder column"
 msgstr "Réorganiser la colonne"
+
+#: includes/class-gf-chained-select-enhancer.php
+msgid "Line \"%1$s\" should be after \"%2$s\"."
+msgstr "La ligne \"%1$s\" doit être après \"%2$s\"."
+
+#: includes/class-gf-chained-select-enhancer.php
+msgid "Line \"%1$s\" should be before \"%2$s\"."
+msgstr "La ligne \"%1$s\" doit être avant \"%2$s\"."
+
+#: includes/class-gf-chained-select-enhancer.php
+msgid "Current source file"
+msgstr "Fichier source actuel"
+
+#: includes/class-gf-chained-select-enhancer.php
+msgid "Select a file below to replace it."
+msgstr "Sélectionnez un fichier ci-dessous pour le remplacer."
 
 #: includes/class-gf-chained-select-enhancer.php
 msgid "Please select a chained select field first"

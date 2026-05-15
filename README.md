@@ -100,6 +100,10 @@ add_filter( 'gform_chainedselects_column_unique_values_limit', function ( $limit
 
 ## Changelog
 
+### 1.9.7 - 2026-05-15
+- **Fixed:** Saved Import Choices source files now keep the uploader drop zone hidden instead of showing `gfcs-drop` again after save
+- **Improved:** The enhancer fallback now restores a native-style uploaded file preview when the original Chained Select preview markup is missing
+
 ### 1.9.6 - 2026-05-15
 - **Fixed:** Invalid backend line reordering can no longer be persisted in the column manager
 - **Improved:** Previously saved invalid column orders are now restored to a valid native chain order when the field settings load

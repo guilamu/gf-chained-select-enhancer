@@ -70,6 +70,67 @@
             .replace(/%2\$s/g, String(secondValue || ''));
     }
 
+    function formatImportSourceFileSize(file) {
+        var size = file && typeof file.size !== 'undefined' ? Number(file.size) : NaN;
+
+        if (typeof window.plupload !== 'undefined' && window.plupload && !isNaN(size) && size > 0) {
+            return window.plupload.formatSize(size).toUpperCase();
+        }
+
+        return '';
+    }
+
+    function formatImportSourceFileDate(file) {
+        var timestamp = file && typeof file.dateUploaded !== 'undefined' ? Number(file.dateUploaded) : NaN;
+
+        if (!isNaN(timestamp) && timestamp > 0) {
+            var diff = Math.max(1, Math.round((Date.now() / 1000) - timestamp));
+
+            if (diff >= 24 * 60 * 60) {
+                var days = Math.round(diff / (24 * 60 * 60));
+                return days + ' ' + (days === 1 ? 'day' : 'days') + ' ago';
+            }
+
+            if (diff >= 60 * 60) {
+                var hours = Math.round(diff / (60 * 60));
+                return hours + ' ' + (hours === 1 ? 'hour' : 'hours') + ' ago';
+            }
+
+            if (diff >= 60) {
+                var minutes = Math.round(diff / 60);
+                return minutes + ' ' + (minutes === 1 ? 'min' : 'mins') + ' ago';
+            }
+
+            return diff + ' ' + (diff === 1 ? 'sec' : 'secs') + ' ago';
+        }
+
+        return '';
+    }
+
+    function buildImportChoicesSourceFileMarkup(file) {
+        var fileName = String((file && (file.name || file.uploaded_filename)) || '').trim();
+        var fileId = String((file && (file.id || file.uploaded_filename || file.name)) || 'gfcs-enhancer-source-file').trim();
+        var fileSize = formatImportSourceFileSize(file);
+        var fileDate = formatImportSourceFileDate(file);
+        var sizeMarkup = fileSize ? ' <span class="gfcs-file-size">' + escapeHtml(fileSize) + '</span>' : '';
+        var dateMarkup = fileDate ? ' <span class="gfcs-file-date"> | ' + escapeHtml(fileDate) + '</span>' : '';
+
+        if (!fileName) {
+            return '';
+        }
+
+        return ''
+            + '<div id="' + escapeHtml(fileId) + '" class="gfcs-status-complete" data-gfcs-enhancer-source-file="true">'
+            + '<span class="gfcs-file-icon"></span> ' + escapeHtml(fileName)
+            + sizeMarkup
+            + dateMarkup
+            + ' <b class="gfcs-file-percent"></b>'
+            + '<span class="gfcs-success"><i class="gficon-tick gf_valid"></i></span>'
+            + '<span class="gfcs-remove"><i class="gficon-subtract"></i></span>'
+            + '<span class="gfcs-processing"></span>'
+            + '</div>';
+    }
+
     function createSectionId() {
         sectionIdCounter += 1;
         return 'gfcs-section-' + Date.now().toString(36) + '-' + sectionIdCounter;
@@ -1218,54 +1279,32 @@
             var sample = document.getElementById('gfcs-sample');
             var existingFallback;
             var previewMarker;
-            var fallback;
-            var label;
-            var name;
-            var hint;
-            var fileName;
+            var fallbackMarkup;
 
             if (!isChainedSelectField(field) || !field || !field.gfcsFile || field.gfcsFilterEnabled || !progress || !drop) {
                 return;
             }
 
-            drop.style.display = '';
+            drop.style.display = 'none';
 
             if (sample) {
-                sample.style.display = '';
+                sample.style.display = 'none';
             }
 
             previewMarker = progress.querySelector('.gfcs-remove, .gfcs-source-message, [class*="gfcs-status-"]');
-            existingFallback = progress.querySelector('.gfcs-enhancer-source-file');
+            existingFallback = progress.querySelector('[data-gfcs-enhancer-source-file="true"], .gfcs-enhancer-source-file');
 
             if (previewMarker || existingFallback) {
                 return;
             }
 
-            fileName = String(field.gfcsFile.name || field.gfcsFile.uploaded_filename || '').trim();
+            fallbackMarkup = buildImportChoicesSourceFileMarkup(field.gfcsFile);
 
-            if (!fileName) {
+            if (!fallbackMarkup) {
                 return;
             }
 
-            fallback = document.createElement('div');
-            fallback.className = 'gfcs-enhancer-source-file';
-
-            label = document.createElement('div');
-            label.className = 'gfcs-enhancer-source-file__label';
-            label.textContent = settings.currentSourceFile;
-
-            name = document.createElement('div');
-            name.className = 'gfcs-enhancer-source-file__name';
-            name.textContent = fileName;
-
-            hint = document.createElement('div');
-            hint.className = 'gfcs-enhancer-source-file__hint';
-            hint.textContent = settings.replaceSourceFileHint;
-
-            fallback.appendChild(label);
-            fallback.appendChild(name);
-            fallback.appendChild(hint);
-            progress.appendChild(fallback);
+            progress.innerHTML = fallbackMarkup;
         }, 0);
     }
 

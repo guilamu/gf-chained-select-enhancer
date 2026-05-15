@@ -100,6 +100,10 @@ add_filter( 'gform_chainedselects_column_unique_values_limit', function ( $limit
 
 ## Changelog
 
+### 1.9.5 - 2026-05-15
+- **Improved:** The enhancer now only boots its runtime when both Gravity Forms and the Gravity Forms Chained Selects Add-On are available
+- **Added:** Admins now see a clear dashboard warning when Gravity Forms is active but the Chained Selects add-on is missing, instead of the enhancer failing silently
+
 ### 1.9.4 - 2026-05-14
 - **Improved:** Left-positioned chained select sub-labels now show their full text in a native tooltip on hover
 - **Improved:** Interactive chained select dropdowns now stand out subtly from disabled and unavailable states

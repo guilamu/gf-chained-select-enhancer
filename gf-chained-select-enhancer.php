@@ -3,7 +3,7 @@
  * Plugin Name: Chained Select Enhancer for Gravity Forms
  * Plugin URI: https://github.com/guilamu/gf-chained-select-enhancer
  * Description: Enhances Gravity Forms Chained Selects with auto-select functionality, column hiding options, and XLSX file support.
- * Version: 1.9.4
+ * Version: 1.9.5
  * Author: Guilamu
  * Author URI: https://github.com/guilamu
  * Text Domain: gf-chained-select-enhancer
@@ -20,7 +20,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Plugin constants.
-define('GFCS_VERSION', '1.9.4');
+define('GFCS_VERSION', '1.9.5');
 define('GFCS_PLUGIN_FILE', plugin_basename(__FILE__));
 define('GFCS_PLUGIN_PATH', plugin_dir_path(__FILE__));
 define('GFCS_PLUGIN_URL', plugin_dir_url(__FILE__));
@@ -33,6 +33,55 @@ require_once GFCS_PLUGIN_PATH . 'includes/class-import-handler.php';
 
 
 /**
+ * Check whether the Chained Selects add-on dependency is loaded.
+ *
+ * @return bool
+ */
+function gfcs_has_chained_selects_dependency(): bool
+{
+    return defined('GF_CHAINEDSELECTS_VERSION')
+        || function_exists('gf_chained_selects')
+        || class_exists('GF_ChainedSelects_Bootstrap');
+}
+
+
+/**
+ * Check whether the runtime dependencies required by the enhancer are loaded.
+ *
+ * @return bool
+ */
+function gfcs_has_runtime_dependencies(): bool
+{
+    if (!class_exists('GFForms')) {
+        return false;
+    }
+
+    return gfcs_has_chained_selects_dependency();
+}
+
+
+/**
+ * Display an admin notice when the Chained Selects add-on is missing.
+ *
+ * @return void
+ */
+function gfcs_missing_chained_selects_notice(): void
+{
+    if (!current_user_can('activate_plugins') || gfcs_has_chained_selects_dependency()) {
+        return;
+    }
+
+    printf(
+        '<div class="notice notice-warning"><p>%s</p></div>',
+        esc_html__(
+            'Chained Select Enhancer for Gravity Forms requires the Gravity Forms Chained Selects Add-On to be installed and active. Enhancer features are currently disabled.',
+            'gf-chained-select-enhancer'
+        )
+    );
+}
+
+
+/**
  * Initialize the plugin.
  *
  * @return void
@@ -42,8 +91,14 @@ function gfcs_init(): void
     // Initialize GitHub updater (always, for update checks).
     GFCS_GitHub_Updater::init();
 
-    // Initialize main functionality only if Gravity Forms is active.
-    if (class_exists('GFForms')) {
+    if (class_exists('GFForms') && !gfcs_has_chained_selects_dependency()) {
+        add_action('admin_notices', 'gfcs_missing_chained_selects_notice');
+        add_action('network_admin_notices', 'gfcs_missing_chained_selects_notice');
+    }
+
+    // Initialize main functionality only when both Gravity Forms and
+    // the Chained Selects add-on are available.
+    if (gfcs_has_runtime_dependencies()) {
         new GFCS_Chained_Select_Enhancer(
             GFCS_VERSION,
             GFCS_PLUGIN_URL,

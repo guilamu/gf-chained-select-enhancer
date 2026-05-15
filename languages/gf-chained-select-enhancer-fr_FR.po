@@ -1,9 +1,9 @@
 msgid ""
 msgstr ""
-"Project-Id-Version: Chained Select Enhancer for Gravity Forms 1.9.4\n"
+"Project-Id-Version: Chained Select Enhancer for Gravity Forms 1.9.5\n"
 "Report-Msgid-Bugs-To: https://github.com/guilamu/gf-chained-select-enhancer\n"
-"POT-Creation-Date: 2026-02-05 12:00+0000\n"
-"PO-Revision-Date: 2026-05-14 18:41+0200\n"
+"POT-Creation-Date: 2026-05-15 18:00+0000\n"
+"PO-Revision-Date: 2026-05-15 10:26+0200\n"
 "Last-Translator: Guilamu <guilamu@gmail.com>\n"
 "Language-Team: French\n"
 "Language: fr_FR\n"
@@ -24,6 +24,10 @@ msgstr ""
 #. Description of the plugin
 msgid "Enhances Gravity Forms Chained Selects with auto-select functionality, column hiding options, and XLSX file support."
 msgstr "Améliore les sélections en chaîne de Gravity Forms avec : sélection automatique, masquage de colonnes, prise en charge des fichiers XLSX."
+
+#: gf-chained-select-enhancer.php
+msgid "Chained Select Enhancer for Gravity Forms requires the Gravity Forms Chained Selects Add-On to be installed and active. Enhancer features are currently disabled."
+msgstr "Chained Select Enhancer for Gravity Forms nécessite que le module complémentaire Gravity Forms Chained Selects soit installé et actif. Les fonctionnalités de l'extension sont actuellement désactivées."
 
 #. Author of the plugin
 msgid "Guilamu"

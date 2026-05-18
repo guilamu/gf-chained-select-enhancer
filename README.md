@@ -11,6 +11,7 @@ Enhances Gravity Forms Chained Selects with auto-select, left-aligned labels, co
 ## Layout & Visibility
 
 - Set vertical chained selects to full width when long values need more room
+- Show the full currently selected value in a native tooltip when long chained select content is truncated
 - Group related columns into titled frontend sections from the field settings panel
 - Display consecutive sections side by side from the field settings panel with matching backend and frontend layout
 - Hide unwanted columns while keeping the chained select data structure intact
@@ -99,6 +100,10 @@ add_filter( 'gform_chainedselects_column_unique_values_limit', function ( $limit
 ```
 
 ## Changelog
+
+### 1.9.8 - 2026-05-18
+- **Improved:** Hovering a chained select input now shows the full currently selected value in the native tooltip instead of the column sub-label
+- **Improved:** Selected-value tooltips now resync on hover, focus, change, and Gravity Forms rerenders
 
 ### 1.9.7 - 2026-05-15
 - **Fixed:** Saved Import Choices source files now keep the uploader drop zone hidden instead of showing `gfcs-drop` again after save

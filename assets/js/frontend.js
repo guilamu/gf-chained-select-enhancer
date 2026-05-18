@@ -85,18 +85,69 @@
         return true;
     }
 
+    function getFieldTooltipText($field) {
+        var $selectedOption;
+        var optionText;
+
+        if (!$field || !$field.length) {
+            return '';
+        }
+
+        if ($field.is('select')) {
+            $selectedOption = $field.find('option:selected').first();
+            optionText = $.trim($selectedOption.text());
+
+            if (!$selectedOption.length || $selectedOption.hasClass('gf_placeholder') || $field.val() === '' || !optionText) {
+                return '';
+            }
+
+            return optionText;
+        }
+
+        return $.trim($field.val());
+    }
+
+    function syncFieldTooltip($field) {
+        var tooltipText = getFieldTooltipText($field);
+
+        if (!$field || !$field.length) {
+            return;
+        }
+
+        if (!tooltipText) {
+            $field.removeAttr('title');
+            return;
+        }
+
+        $field.attr('title', tooltipText);
+    }
+
     function syncSubLabelTooltips(scope) {
         var $scope = scope && scope.jquery ? scope : $(scope || document);
 
         $scope.find('.ginput_chained_selects_container.gfcs-sub-label-left label.gform-field-label.gform-field-label--type-sub').each(function () {
             var $label = $(this);
             var labelText = $.trim($label.text());
+            var inputId = $label.attr('for');
+            var $field = $();
 
-            if (!labelText) {
-                return;
+            if (inputId) {
+                $field = $scope.find('select[id="' + inputId + '"], input[id="' + inputId + '"]:not([type="hidden"])').first();
             }
 
-            $label.attr('title', labelText);
+            if (!$field.length) {
+                $field = $label.siblings('select, input:not([type="hidden"])').first();
+            }
+
+            if (!labelText) {
+                $label.removeAttr('title');
+            } else {
+                $label.attr('title', labelText);
+            }
+
+            if ($field.length) {
+                syncFieldTooltip($field);
+            }
         });
     }
 
@@ -115,6 +166,10 @@
     }
 
     $(bootstrapFrontendEnhancements);
+
+    $(document).on('mouseenter focusin change', '.ginput_chained_selects_container.gfcs-sub-label-left select, .ginput_chained_selects_container.gfcs-sub-label-left input:not([type="hidden"])', function () {
+        syncFieldTooltip($(this));
+    });
 
     $(document).on('gform_post_render gform_post_conditional_logic gform_page_loaded', function (event, formId) {
         if (formId) {

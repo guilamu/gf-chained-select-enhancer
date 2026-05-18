@@ -101,6 +101,9 @@ add_filter( 'gform_chainedselects_column_unique_values_limit', function ( $limit
 
 ## Changelog
 
+### 1.9.9 - 2026-05-18
+- **Fixed:** The "View details" modal now restores the footer action button for current installs, so active sites show the native `Active` state instead of an empty footer
+
 ### 1.9.8 - 2026-05-18
 - **Improved:** Hovering a chained select input now shows the full currently selected value in the native tooltip instead of the column sub-label
 - **Improved:** Selected-value tooltips now resync on hover, focus, change, and Gravity Forms rerenders

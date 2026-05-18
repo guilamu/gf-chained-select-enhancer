@@ -262,16 +262,14 @@ class GFCS_GitHub_Updater {
         $result->banners      = array();
         $result->icons        = array();
 
-        if ($release_data && $has_update) {
-            $package_url = self::get_package_url($release_data);
+        $download_link = self::get_plugin_info_download_link($release_data);
 
-            if ('' !== $package_url) {
-                $result->download_link = $package_url;
-            }
+        if ('' !== $download_link) {
+            $result->download_link = $download_link;
+        }
 
-            if (!empty($release_data['published_at'])) {
-                $result->last_updated = $release_data['published_at'];
-            }
+        if ($release_data && !empty($release_data['published_at'])) {
+            $result->last_updated = $release_data['published_at'];
         }
 
         $result->sections = self::build_plugin_info_sections(
@@ -358,6 +356,13 @@ class GFCS_GitHub_Updater {
         $result->external     = true;
         $result->banners      = array();
         $result->icons        = array();
+
+        $download_link = self::get_plugin_info_download_link();
+
+        if ('' !== $download_link) {
+            $result->download_link = $download_link;
+        }
+
         $result->sections     = array(
             'description' => '<p>' . esc_html(self::PLUGIN_DESCRIPTION) . '</p>',
             'changelog'   => sprintf(
@@ -466,6 +471,33 @@ class GFCS_GitHub_Updater {
 
         // Fallback to GitHub's auto-generated zipball.
         return $release_data['zipball_url'] ?? '';
+    }
+
+    /**
+     * Get a package URL suitable for the plugin details footer action button.
+     *
+     * WordPress only renders the plugin-information footer button when the
+     * plugin info payload includes a non-empty download_link, even if the
+     * plugin is already installed and active.
+     *
+     * @param array|null $release_data Release data from GitHub API.
+     * @return string
+     */
+    private static function get_plugin_info_download_link(?array $release_data = null): string {
+        if (is_array($release_data)) {
+            $package_url = self::get_package_url($release_data);
+
+            if ('' !== $package_url) {
+                return $package_url;
+            }
+        }
+
+        return sprintf(
+            'https://github.com/%s/%s/releases/latest/download/%s.zip',
+            self::GITHUB_USER,
+            self::GITHUB_REPO,
+            self::GITHUB_REPO
+        );
     }
 
     /**

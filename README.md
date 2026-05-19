@@ -101,6 +101,9 @@ add_filter( 'gform_chainedselects_column_unique_values_limit', function ( $limit
 
 ## Changelog
 
+### 2.0.0 - 2026-05-19
+- **Fixed:** Auto-select no longer breaks when columns are hidden — hidden column `<select>` elements are now preserved in the DOM during section layout rebuild so the chained select JavaScript chain can propagate through them
+
 ### 1.9.9 - 2026-05-18
 - **Fixed:** The "View details" modal now restores the footer action button for current installs, so active sites show the native `Active` state instead of an empty footer
 

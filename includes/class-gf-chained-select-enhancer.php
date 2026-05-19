@@ -983,6 +983,16 @@ JS;
             return null;
         }
 
+        // Build a lookup of column IDs present in the renderable groups.
+        $visible_column_ids = array();
+
+        foreach ($groups as $group) {
+            $group_column_ids = isset($group['columnIds']) && is_array($group['columnIds']) ? $group['columnIds'] : array();
+            foreach ($group_column_ids as $column_id) {
+                $visible_column_ids[(string) $column_id] = true;
+            }
+        }
+
         for ($index = 0; $index < count($block_nodes); $index++) {
             if (!empty($block_nodes[$index]['pairWithNext']) && isset($block_nodes[$index + 1])) {
                 $row = $dom->createElement('div');
@@ -995,6 +1005,22 @@ JS;
             }
 
             $container->appendChild($block_nodes[$index]['node']);
+        }
+
+        // Re-insert hidden column input nodes so they remain in the
+        // DOM for GF Chained Selects JS chaining.
+        foreach ($field->inputs as $input) {
+            if (!is_array($input) || !isset($input['id'])) {
+                continue;
+            }
+
+            $column_id = (string) $input['id'];
+
+            if (isset($visible_column_ids[$column_id]) || !isset($input_nodes[$column_id])) {
+                continue;
+            }
+
+            $container->appendChild($input_nodes[$column_id]->cloneNode(true));
         }
 
         if ($completion_clone instanceof DOMElement) {
@@ -1271,6 +1297,17 @@ JS;
                         $container->removeChild($container->firstChild);
                     }
 
+                    // Build a lookup of column IDs present in the renderable groups
+                    // so we can identify hidden columns that were excluded.
+                    $visible_column_ids = array();
+
+                    foreach ($groups as $group) {
+                        $group_column_ids = isset($group['columnIds']) && is_array($group['columnIds']) ? $group['columnIds'] : array();
+                        foreach ($group_column_ids as $column_id) {
+                            $visible_column_ids[(string) $column_id] = true;
+                        }
+                    }
+
                     foreach ($groups as $index => $group) {
                         $column_ids = isset($group['columnIds']) && is_array($group['columnIds']) ? $group['columnIds'] : array();
                         $group_nodes = array();
@@ -1330,6 +1367,23 @@ JS;
                         foreach ($group_nodes as $group_node) {
                             $container->appendChild($group_node);
                         }
+                    }
+
+                    // Re-insert hidden column input nodes so they remain in the
+                    // DOM for GF Chained Selects JS chaining. The CSS generated
+                    // by enqueue_field_css() already hides them visually.
+                    foreach ($field->inputs as $input) {
+                        if (!is_array($input) || !isset($input['id'])) {
+                            continue;
+                        }
+
+                        $column_id = (string) $input['id'];
+
+                        if (isset($visible_column_ids[$column_id]) || !isset($input_nodes[$column_id])) {
+                            continue;
+                        }
+
+                        $container->appendChild($input_nodes[$column_id]->cloneNode(true));
                     }
 
                     if ($completion_clone instanceof DOMElement) {

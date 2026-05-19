@@ -54,7 +54,7 @@ In the form editor, select your Chained Select field. In the field settings pane
 
 ### How do I place labels on the left or create sections?
 
-In the field editor, choose "To the left of the field" for sub-label placement. Use "Manage Columns" to create titled sections and organize the columns shown on the frontend. Use the side-by-side button on a section header to display that section next to the following one.
+In the field editor, choose "To the left of the field" for sub-label placement. Use "Manage Columns" to create titled sections and organize the columns shown on the frontend. Section headers intentionally stay focused on the title and actions, without showing present/hidden column counters. Use the side-by-side button on a section header to display that section next to the following one.
 
 ### How do I hide columns?
 
@@ -100,6 +100,10 @@ add_filter( 'gform_chainedselects_column_unique_values_limit', function ( $limit
 ```
 
 ## Changelog
+
+### 2.0.1 - 2026-05-19
+- **Improved:** Retired the `gfcs-section-meta` column counters in the column manager so section headers no longer show present/hidden column totals
+- **Improved:** Empty sections now keep their delete action inside the header action group after the `gfcs-section-meta` retirement
 
 ### 2.0.0 - 2026-05-19
 - **Fixed:** Auto-select no longer breaks when columns are hidden — hidden column `<select>` elements are now preserved in the DOM during section layout rebuild so the chained select JavaScript chain can propagate through them

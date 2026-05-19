@@ -740,18 +740,6 @@
         refreshSubLabelPlacementPreview(field);
     }
 
-    function formatSectionMeta(columnCount, hiddenCount) {
-        var parts = [
-            columnCount + ' ' + (columnCount === 1 ? settings.columnSingular : settings.columnPlural)
-        ];
-
-        if (hiddenCount > 0) {
-            parts.push(hiddenCount + ' ' + (hiddenCount === 1 ? settings.hiddenColumnSingular : settings.hiddenColumnPlural));
-        }
-
-        return parts.join(' · ');
-    }
-
     function getGroupDisplayTitle(group, index) {
         var title = String(group.title || '').trim();
         return title || settings.untitledSection + ' ' + (index + 1);
@@ -1005,13 +993,12 @@
         var card = document.createElement('section');
         var header = document.createElement('div');
         var heading = document.createElement('div');
-        var meta = document.createElement('div');
         var actions = document.createElement('div');
         var pairButton = document.createElement('button');
         var editButton = document.createElement('button');
         var toggleButton = document.createElement('button');
+        var deleteButton = null;
         var body = document.createElement('div');
-        var hiddenCount = 0;
         var pairOwnerIndex = getPairOwnerIndex(state.groups, index);
         var isPaired = pairOwnerIndex !== -1;
         var canPair = isPaired || index < state.groups.length - 1;
@@ -1081,16 +1068,8 @@
             heading.appendChild(title);
         }
 
-        hiddenCount = group.columnIds.filter(function (columnId) {
-            return !!state.hiddenById[columnId];
-        }).length;
-
-        meta.className = 'gfcs-section-meta';
-
         if (group.columnIds.length === 0) {
-            var deleteButton = document.createElement('button');
-
-            meta.classList.add('gfcs-section-meta--action');
+            deleteButton = document.createElement('button');
 
             deleteButton.type = 'button';
             deleteButton.className = 'gfcs-section-action gfcs-section-delete';
@@ -1102,10 +1081,6 @@
                 event.stopPropagation();
                 removeEmptyGroup(field, group.id);
             });
-
-            meta.appendChild(deleteButton);
-        } else {
-            meta.textContent = formatSectionMeta(group.columnIds.length, hiddenCount);
         }
 
         actions.className = 'gfcs-section-actions';
@@ -1158,6 +1133,10 @@
         actions.appendChild(editButton);
         actions.appendChild(toggleButton);
 
+        if (deleteButton) {
+            actions.appendChild(deleteButton);
+        }
+
         body.className = 'gfcs-section-body';
         body.setAttribute('data-group-id', group.id);
         body.hidden = !!state.collapsedGroupIds[group.id];
@@ -1198,7 +1177,6 @@
         }
 
         header.appendChild(heading);
-        header.appendChild(meta);
         header.appendChild(actions);
 
         card.appendChild(header);
@@ -1659,10 +1637,6 @@
             noColumnsFound: 'No columns found',
             sectionBeforeColumn: 'Section before this column',
             sectionTitlePlaceholder: 'Leave empty if no section starts here',
-            columnSingular: 'column',
-            columnPlural: 'columns',
-            hiddenColumnSingular: 'hidden column',
-            hiddenColumnPlural: 'hidden columns',
             untitledSection: 'Section',
             newSectionTitle: 'New Section',
             addSection: 'Add a section',

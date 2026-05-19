@@ -30,7 +30,7 @@
     cursor: pointer;
     display: grid;
     gap: 12px;
-    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-columns: minmax(0, 1fr) auto;
     padding: 12px 14px;
 }
 
@@ -56,16 +56,6 @@
     min-height: 34px;
     padding: 6px 10px;
     width: 100%;
-}
-
-.hide_columns_setting .gfcs-section-meta {
-    color: #6b7280;
-    font-size: 12px;
-    white-space: nowrap;
-}
-
-.hide_columns_setting .gfcs-section-meta--action {
-    display: flex;
 }
 
 .hide_columns_setting .gfcs-section-actions {

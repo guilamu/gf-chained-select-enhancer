@@ -42,6 +42,13 @@ class GFCS_Chained_Select_Enhancer
     private $plugin_path;
 
     /**
+     * Track chained-select fields already localized for frontend caching.
+     *
+     * @var array<string, bool>
+     */
+    private $localized_frontend_choice_fields = array();
+
+    /**
      * Constructor: Set up WordPress hooks.
      *
      * @param string $version     Plugin version.
@@ -79,6 +86,7 @@ class GFCS_Chained_Select_Enhancer
         // Frontend hooks.
         add_filter('gform_field_content', array($this, 'add_auto_select_property'), 10, 5);
         add_filter('gform_chained_selects_input_choices', array($this, 'auto_select_only_choice'), 10, 7);
+        add_filter('gform_save_field_value', array($this, 'normalize_saved_chained_select_value'), 10, 5);
         add_filter('gform_pre_render', array($this, 'enqueue_field_css'), 10, 1);
 
         // AJAX handler.
@@ -1261,6 +1269,8 @@ JS;
                 if ($root instanceof DOMElement && $container instanceof DOMElement) {
                     $input_nodes = array();
                     $break_before_indices = array();
+                    $prefix_nodes_by_column_id = array();
+                    $column_classes_by_id = array();
 
                     foreach ($field->inputs as $input) {
                         if (!is_array($input) || !isset($input['id'])) {
@@ -1293,21 +1303,11 @@ JS;
                         $container->removeChild($container->firstChild);
                     }
 
-                    // Build a lookup of column IDs present in the renderable groups
-                    // so we can identify hidden columns that were excluded.
-                    $visible_column_ids = array();
-
-                    foreach ($groups as $group) {
-                        $group_column_ids = isset($group['columnIds']) && is_array($group['columnIds']) ? $group['columnIds'] : array();
-                        foreach ($group_column_ids as $column_id) {
-                            $visible_column_ids[(string) $column_id] = true;
-                        }
-                    }
-
                     foreach ($groups as $index => $group) {
                         $column_ids = isset($group['columnIds']) && is_array($group['columnIds']) ? $group['columnIds'] : array();
-                        $group_nodes = array();
                         $title = isset($group['title']) ? trim((string) $group['title']) : '';
+                        $prefix_nodes = array();
+                        $first_column_id = '';
 
                         if (empty($column_ids)) {
                             continue;
@@ -1316,12 +1316,13 @@ JS;
                         $is_paired_left = !empty($group['pairWithNext']) && isset($groups[$index + 1]);
                         $is_paired_right = !$is_paired_left && $index > 0 && !empty($groups[$index - 1]['pairWithNext']);
                         $layout_modifier = $is_paired_left ? 'paired-left' : ($is_paired_right ? 'paired-right' : 'full');
+                        $first_column_id = (string) reset($column_ids);
 
                         if (!empty($break_before_indices[$index])) {
                             $break_node = $dom->createElement('div');
                             $break_node->setAttribute('class', 'gfcs-column-section-break');
                             $break_node->setAttribute('aria-hidden', 'true');
-                            $group_nodes[] = $break_node;
+                            $prefix_nodes[] = $break_node;
                         }
 
                         if ('' !== $title) {
@@ -1333,7 +1334,18 @@ JS;
                             $label_node->appendChild($dom->createTextNode($title));
 
                             $section_node->appendChild($label_node);
-                            $group_nodes[] = $section_node;
+                            $prefix_nodes[] = $section_node;
+                        }
+
+                        if (!empty($prefix_nodes) && '' !== $first_column_id) {
+                            if (!isset($prefix_nodes_by_column_id[$first_column_id])) {
+                                $prefix_nodes_by_column_id[$first_column_id] = array();
+                            }
+
+                            $prefix_nodes_by_column_id[$first_column_id] = array_merge(
+                                $prefix_nodes_by_column_id[$first_column_id],
+                                $prefix_nodes
+                            );
                         }
 
                         foreach ($column_ids as $column_id) {
@@ -1343,31 +1355,15 @@ JS;
                                 continue;
                             }
 
-                            $input_node = $input_nodes[$column_id]->cloneNode(true);
-                            if ($input_node instanceof DOMElement) {
-                                $this->append_dom_element_classes(
-                                    $input_node,
-                                    array(
-                                        'gfcs-column-section-input',
-                                        'gfcs-column-section-input--' . $layout_modifier,
-                                    )
-                                );
-                                $group_nodes[] = $input_node;
+                            if (!isset($column_classes_by_id[$column_id])) {
+                                $column_classes_by_id[$column_id] = array();
                             }
-                        }
 
-                        if (count($group_nodes) === 0 || (!$title && count($group_nodes) === 1 && $group_nodes[0] instanceof DOMElement && 'div' === $group_nodes[0]->tagName && 'gfcs-column-section-break' === $group_nodes[0]->getAttribute('class'))) {
-                            continue;
-                        }
-
-                        foreach ($group_nodes as $group_node) {
-                            $container->appendChild($group_node);
+                            $column_classes_by_id[$column_id][] = 'gfcs-column-section-input';
+                            $column_classes_by_id[$column_id][] = 'gfcs-column-section-input--' . $layout_modifier;
                         }
                     }
 
-                    // Re-insert hidden column input nodes so they remain in the
-                    // DOM for GF Chained Selects JS chaining. The CSS generated
-                    // by enqueue_field_css() already hides them visually.
                     foreach ($field->inputs as $input) {
                         if (!is_array($input) || !isset($input['id'])) {
                             continue;
@@ -1375,11 +1371,23 @@ JS;
 
                         $column_id = (string) $input['id'];
 
-                        if (isset($visible_column_ids[$column_id]) || !isset($input_nodes[$column_id])) {
+                        if (isset($prefix_nodes_by_column_id[$column_id])) {
+                            foreach ($prefix_nodes_by_column_id[$column_id] as $prefix_node) {
+                                $container->appendChild($prefix_node);
+                            }
+                        }
+
+                        if (!isset($input_nodes[$column_id])) {
                             continue;
                         }
 
-                        $container->appendChild($input_nodes[$column_id]->cloneNode(true));
+                        $input_node = $input_nodes[$column_id]->cloneNode(true);
+
+                        if ($input_node instanceof DOMElement && isset($column_classes_by_id[$column_id])) {
+                            $this->append_dom_element_classes($input_node, $column_classes_by_id[$column_id]);
+                        }
+
+                        $container->appendChild($input_node);
                     }
 
                     if ($completion_clone instanceof DOMElement) {
@@ -1524,6 +1532,24 @@ JS;
             return $choices;
         }
 
+        if (is_array($choices) && !empty($choices)) {
+            $choice_count = count($choices);
+
+            foreach ($choices as &$choice) {
+                if (!$this->is_internal_empty_choice($choice)) {
+                    continue;
+                }
+
+                $choice['text'] = wp_strip_all_tags(__('No value', 'gf-chained-select-enhancer'));
+
+                if (1 === $choice_count) {
+                    $choice['isSelected'] = true;
+                }
+            }
+
+            unset($choice);
+        }
+
         if (!empty($field->autoSelectOnly) && is_array($choices) && 1 === count($choices)) {
             $choices[0]['isSelected'] = true;
         }
@@ -1559,6 +1585,62 @@ JS;
     }
 
     /**
+     * Normalize internal blank-choice tokens before values are stored.
+     *
+     * @param mixed        $value    Submitted field value.
+     * @param array        $entry    Entry being saved.
+     * @param object       $field    Field object.
+     * @param array        $form     Form object.
+     * @param string|false $input_id Current input ID.
+     * @return mixed
+     */
+    public function normalize_saved_chained_select_value($value, $entry, $field, $form, $input_id = false)
+    {
+        $field_type = is_object($field) ? $field->type : '';
+
+        if ('chainedselect' !== $field_type && 'chained_select' !== $field_type) {
+            return $value;
+        }
+
+        if (is_string($value) && $this->is_internal_empty_choice_value($value)) {
+            return '';
+        }
+
+        return $value;
+    }
+
+    /**
+     * Determine whether a choice array represents an internal blank token.
+     *
+     * @param mixed $choice Choice data.
+     * @return bool
+     */
+    private function is_internal_empty_choice($choice): bool
+    {
+        if (!is_array($choice)) {
+            return false;
+        }
+
+        $value = isset($choice['value']) ? (string) $choice['value'] : '';
+        $text = isset($choice['text']) ? (string) $choice['text'] : '';
+
+        return $this->is_internal_empty_choice_value($value)
+            || $this->is_internal_empty_choice_value($text);
+    }
+
+    /**
+     * Determine whether a scalar value matches the internal blank token.
+     *
+     * @param string $value Choice text or value.
+     * @return bool
+     */
+    private function is_internal_empty_choice_value(string $value): bool
+    {
+        return defined('GFCS_INTERNAL_EMPTY_CHOICE_TOKEN')
+            && GFCS_INTERNAL_EMPTY_CHOICE_TOKEN === $value;
+    }
+
+    /**
      * Enqueue CSS for field customizations when form is rendered.
      *
      * @param array $form Form object.
@@ -1567,6 +1649,7 @@ JS;
     public function enqueue_field_css(array $form): array
     {
         static $css_added = array();
+        $frontend_choice_cache = array();
 
         if (!isset($form['fields']) || !is_array($form['fields'])) {
             return $form;
@@ -1581,6 +1664,15 @@ JS;
             }
 
             $key = $form['id'] . '_' . $field->id;
+
+            if (
+                !isset($this->localized_frontend_choice_fields[$key])
+                && $this->should_localize_frontend_choices($form, $field)
+            ) {
+                $frontend_choice_cache[sprintf('%d.%d', (int) $form['id'], (int) $field->id)] = $this->prepare_frontend_choice_tree($field->choices);
+                $this->localized_frontend_choice_fields[$key] = true;
+            }
+
             if (isset($css_added[$key])) {
                 continue;
             }
@@ -1613,6 +1705,10 @@ JS;
             $css_added[$key] = true;
         }
 
+        if (!empty($frontend_choice_cache)) {
+            $this->enqueue_frontend_choice_cache($frontend_choice_cache);
+        }
+
         if (!empty($css_rules)) {
             $css = implode(' ', $css_rules);
             // Output CSS in footer to ensure it loads after form
@@ -1622,6 +1718,86 @@ JS;
         }
 
         return $form;
+    }
+
+    /**
+     * Determine whether a field should expose its choices to the frontend cache.
+     *
+     * @param array  $form  Form object.
+     * @param object $field Field object.
+     * @return bool
+     */
+    private function should_localize_frontend_choices(array $form, $field): bool
+    {
+        if (!is_object($field) || empty($field->choices) || !is_array($field->choices)) {
+            return false;
+        }
+
+        return (bool) apply_filters('gfcs_enable_frontend_choice_cache', true, $form, $field);
+    }
+
+    /**
+     * Reduce the stored choice tree to the data needed by the frontend cache.
+     *
+     * @param array $choices Field choices tree.
+     * @return array
+     */
+    private function prepare_frontend_choice_tree(array $choices): array
+    {
+        $prepared_choices = array();
+
+        foreach ($choices as $choice) {
+            if (!is_array($choice)) {
+                continue;
+            }
+
+            $value = isset($choice['value']) ? (string) $choice['value'] : '';
+            $text = isset($choice['text']) ? (string) $choice['text'] : $value;
+            $children = isset($choice['choices']) && is_array($choice['choices'])
+                ? $this->prepare_frontend_choice_tree($choice['choices'])
+                : array();
+
+            $prepared_choices[] = array(
+                'text' => $text,
+                'value' => $value,
+                'choices' => $children,
+            );
+        }
+
+        return $prepared_choices;
+    }
+
+    /**
+     * Add the frontend choice cache before the enhancer script.
+     *
+     * @param array<string, array> $choice_cache Field choices keyed by form.field.
+     * @return void
+     */
+    private function enqueue_frontend_choice_cache(array $choice_cache): void
+    {
+        if (empty($choice_cache)) {
+            return;
+        }
+
+        $payload = array(
+            'token' => defined('GFCS_INTERNAL_EMPTY_CHOICE_TOKEN') ? GFCS_INTERNAL_EMPTY_CHOICE_TOKEN : '',
+            'strings' => array(
+                'noValue' => wp_strip_all_tags(__('No value', 'gf-chained-select-enhancer')),
+            ),
+            'choicesByField' => $choice_cache,
+        );
+
+        $script = 'window.gfcsFrontendData = window.gfcsFrontendData || { choicesByField: {}, strings: {} };'
+            . '(function(data) {'
+            . 'if (!data || typeof data !== "object") { return; }'
+            . 'window.gfcsFrontendData.choicesByField = window.gfcsFrontendData.choicesByField || {};'
+            . 'window.gfcsFrontendData.strings = window.gfcsFrontendData.strings || {};'
+            . 'if (data.token) { window.gfcsFrontendData.token = data.token; }'
+            . 'Object.assign(window.gfcsFrontendData.strings, data.strings || {});'
+            . 'Object.assign(window.gfcsFrontendData.choicesByField, data.choicesByField || {});'
+            . '})(' . wp_json_encode($payload) . ');';
+
+        wp_add_inline_script('gfcs-frontend-script', $script, 'before');
     }
 
     /**
@@ -1775,6 +1951,10 @@ JS;
 
         foreach ($choices as $choice) {
             $text = isset($choice['text']) ? $choice['text'] : '';
+            if ($this->is_internal_empty_choice($choice)) {
+                $text = '';
+            }
+
             $new_path = array_merge($current_path, array($text));
             $sub_choices = isset($choice['choices']) ? $choice['choices'] : array();
 

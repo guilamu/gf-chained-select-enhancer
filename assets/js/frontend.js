@@ -297,17 +297,108 @@
         $.fn.toggleSelect = function (disabled, context) {
             var $result = originalToggleSelect.call(this, disabled, context);
 
-            if (!disabled) {
-                this.each(function () {
-                    lockSingleOptionField($(this), context);
-                });
-            }
+            this.each(function () {
+                var $select = $(this);
+
+                if (!disabled) {
+                    lockSingleOptionField($select, context);
+                }
+
+                syncSingleOptionReadonlySubmission($select);
+            });
 
             return $result;
         };
 
         $.fn.toggleSelect._gfcsSingleOptionReadonly = true;
         $.fn.toggleSelect._gfcsOriginal = originalToggleSelect;
+
+        return true;
+    }
+
+    function getReadonlyMirrorSelector($select) {
+        var selectId;
+
+        if (!$select || !$select.length) {
+            return '';
+        }
+
+        selectId = String($select.attr('id') || '');
+
+        if (!selectId) {
+            return '';
+        }
+
+        return 'input[type="hidden"][data-gfcs-readonly-mirror-for="' + selectId.replace(/"/g, '\\"') + '"]';
+    }
+
+    function getReadonlyMirror($select) {
+        var selector;
+        var $form;
+
+        selector = getReadonlyMirrorSelector($select);
+        if (!selector) {
+            return $();
+        }
+
+        $form = $select.closest('form');
+
+        if (!$form.length) {
+            return $();
+        }
+
+        return $form.find(selector).first();
+    }
+
+    function removeSingleOptionReadonlySubmission($select) {
+        var $mirror = getReadonlyMirror($select);
+
+        if ($mirror.length) {
+            $mirror.remove();
+        }
+    }
+
+    function syncSingleOptionReadonlySubmission($select) {
+        var $mirror;
+        var mirrorId;
+        var selectId;
+        var selectName;
+        var selectValue;
+
+        if (!$select || !$select.length) {
+            return false;
+        }
+
+        if (!$select.prop('disabled') || !shouldLockSingleOptionField($select)) {
+            removeSingleOptionReadonlySubmission($select);
+            return false;
+        }
+
+        selectId = String($select.attr('id') || '');
+        selectName = String($select.attr('name') || '');
+        selectValue = $select.val();
+
+        if (!selectId || !selectName || selectValue === null || String(selectValue) === '') {
+            removeSingleOptionReadonlySubmission($select);
+            return false;
+        }
+
+        $mirror = getReadonlyMirror($select);
+
+        if (!$mirror.length) {
+            mirrorId = selectId + '_gfcs_readonly_mirror';
+            $mirror = $('<input />', {
+                type: 'hidden',
+                id: mirrorId,
+                name: selectName,
+                value: String(selectValue)
+            }).attr('data-gfcs-readonly-mirror-for', selectId);
+
+            $select.after($mirror);
+        } else {
+            $mirror.attr('name', selectName);
+            $mirror.val(String(selectValue));
+        }
 
         return true;
     }
@@ -415,11 +506,13 @@
         var originalToggleSelect;
 
         if (!$select || !$select.length || !shouldLockSingleOptionField($select) || !ensurePatchedToggleSelect()) {
+            removeSingleOptionReadonlySubmission($select);
             return false;
         }
 
         originalToggleSelect = $.fn.toggleSelect._gfcsOriginal;
         originalToggleSelect.call($select, true, getHideInactiveFlag(context));
+        syncSingleOptionReadonlySubmission($select);
 
         return true;
     }
@@ -432,7 +525,10 @@
         }
 
         $scope.find('select[data-auto-select-only="true"][data-gfcs-single-option-readonly="true"]').each(function () {
-            lockSingleOptionField($(this), false);
+            var $select = $(this);
+
+            lockSingleOptionField($select, false);
+            syncSingleOptionReadonlySubmission($select);
         });
 
         return true;
@@ -525,6 +621,10 @@
 
     $(document).on('mouseenter focusin change', '.ginput_chained_selects_container.gfcs-sub-label-left select, .ginput_chained_selects_container.gfcs-sub-label-left input:not([type="hidden"])', function () {
         syncFieldTooltip($(this));
+    });
+
+    $(document).on('change', '.ginput_chained_selects_container select[data-auto-select-only="true"][data-gfcs-single-option-readonly="true"]', function () {
+        syncSingleOptionReadonlySubmission($(this));
     });
 
     $(document).on('gform_post_render gform_post_conditional_logic gform_page_loaded', function (event, formId) {

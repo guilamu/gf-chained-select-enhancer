@@ -5,6 +5,7 @@ Enhances Gravity Forms Chained Selects with auto-select, left-aligned labels, co
 ## Field Behavior
 
 - Choose auto-select when a chained select level has only one available option and optionally make that field read-only
+- Keep auto-selected read-only chained-select levels in the submitted form payload so validation still receives their values
 - Configure display and data options directly in the Gravity Forms editor for existing Chained Select fields
 - Match backend preview and frontend rendering for left-positioned sub-labels and grouped sections
 
@@ -107,6 +108,9 @@ add_filter( 'gform_chainedselects_column_unique_values_limit', function ( $limit
 ```
 
 ## Changelog
+
+### 2.1.1 - 2026-05-20
+- **Fixed:** Auto-selected read-only chained-select levels now submit their values through hidden mirror inputs, so hidden intermediate and downstream values still reach Gravity Forms validation
 
 ### 2.1.0 - 2026-05-19
 - **Improved:** CSV and XLSX imports now preserve intermediate blank columns so later chained-select levels stay aligned instead of shifting left

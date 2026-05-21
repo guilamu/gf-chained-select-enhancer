@@ -469,7 +469,10 @@ class GFCS_Import_Handler
         }
 
         $zip = new ZipArchive();
-        if (true !== $zip->open($file_path, ZipArchive::RDONLY)) {
+        // Some ZIP builds expose ZipArchive without the RDONLY mode constant.
+        $zip_open_flags = defined('ZipArchive::RDONLY') ? ZipArchive::RDONLY : 0;
+
+        if (true !== $zip->open($file_path, $zip_open_flags)) {
             return false;
         }
 

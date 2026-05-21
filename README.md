@@ -109,6 +109,9 @@ add_filter( 'gform_chainedselects_column_unique_values_limit', function ( $limit
 
 ## Changelog
 
+### 2.1.3 - 2026-05-21
+- **Fixed:** XLSX upload validation no longer fatally errors on hosts where `ZipArchive` is available but the `ZipArchive::RDONLY` constant is not exposed
+
 ### 2.1.2 - 2026-05-21
 - **Fixed:** Auto-selected read-only chained-select levels no longer duplicate their values in Gravity Forms calculations; the hidden submission mirror is now created only during form submit.
 

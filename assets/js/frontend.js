@@ -358,7 +358,7 @@
         }
     }
 
-    function syncSingleOptionReadonlySubmission($select) {
+    function syncSingleOptionReadonlySubmission($select, shouldCreateMirror) {
         var $mirror;
         var mirrorId;
         var selectId;
@@ -369,7 +369,7 @@
             return false;
         }
 
-        if (!$select.prop('disabled') || !shouldLockSingleOptionField($select)) {
+        if (!shouldCreateMirror || !$select.prop('disabled') || !shouldLockSingleOptionField($select)) {
             removeSingleOptionReadonlySubmission($select);
             return false;
         }
@@ -625,6 +625,16 @@
 
     $(document).on('change', '.ginput_chained_selects_container select[data-auto-select-only="true"][data-gfcs-single-option-readonly="true"]', function () {
         syncSingleOptionReadonlySubmission($(this));
+    });
+
+    $(document).on('submit', 'form', function () {
+        var $form = $(this);
+
+        refreshSingleOptionReadonlyFields($form);
+
+        $form.find('select[data-auto-select-only="true"][data-gfcs-single-option-readonly="true"]').each(function () {
+            syncSingleOptionReadonlySubmission($(this), true);
+        });
     });
 
     $(document).on('gform_post_render gform_post_conditional_logic gform_page_loaded', function (event, formId) {

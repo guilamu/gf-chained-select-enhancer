@@ -109,6 +109,9 @@ add_filter( 'gform_chainedselects_column_unique_values_limit', function ( $limit
 
 ## Changelog
 
+### 2.1.2 - 2026-05-21
+- **Fixed:** Auto-selected read-only chained-select levels no longer duplicate their values in Gravity Forms calculations; the hidden submission mirror is now created only during form submit.
+
 ### 2.1.1 - 2026-05-20
 - **Fixed:** Auto-selected read-only chained-select levels now submit their values through hidden mirror inputs, so hidden intermediate and downstream values still reach Gravity Forms validation
 

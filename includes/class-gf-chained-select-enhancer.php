@@ -49,6 +49,13 @@ class GFCS_Chained_Select_Enhancer
     private $localized_frontend_choice_fields = array();
 
     /**
+     * Accumulated inline CSS to print in the footer.
+     *
+     * @var string
+     */
+    private $pending_inline_css = '';
+
+    /**
      * Constructor: Set up WordPress hooks.
      *
      * @param string $version     Plugin version.
@@ -170,6 +177,14 @@ JS;
      */
     public function enqueue_admin_assets(): void
     {
+        // Only load admin assets on Gravity Forms screens.
+        $screen = function_exists('get_current_screen') ? get_current_screen() : null;
+        $is_gf_page = $screen && (strpos($screen->id, 'gf_edit_forms') !== false || strpos($screen->id, 'gravityforms') !== false);
+
+        if (!$is_gf_page && !(isset($_GET['page']) && strpos(sanitize_text_field(wp_unslash($_GET['page'])), 'gf_') === 0)) {
+            return;
+        }
+
         $admin_css_version = file_exists($this->plugin_path . 'assets/css/admin.css')
             ? (string) filemtime($this->plugin_path . 'assets/css/admin.css')
             : $this->version;
@@ -192,7 +207,6 @@ JS;
             true
         );
 
-        // Only expose nonce and export settings on GF form editor pages
         $localize_data = array(
             'hidden' => __('Hidden', 'gf-chained-select-enhancer'),
             'visible' => __('Visible', 'gf-chained-select-enhancer'),
@@ -219,15 +233,9 @@ JS;
             'exporting' => __('Exporting...', 'gf-chained-select-enhancer'),
             'exportComplete' => __('Export complete', 'gf-chained-select-enhancer'),
             'exportFailed' => __('Export failed', 'gf-chained-select-enhancer'),
+            'nonce' => wp_create_nonce('gfcs_export_csv'),
+            'ajaxurl' => admin_url('admin-ajax.php'),
         );
-
-        // Only include nonce and ajaxurl on GF form editor pages
-        $screen = function_exists('get_current_screen') ? get_current_screen() : null;
-        $is_gf_page = $screen && (strpos($screen->id, 'gf_edit_forms') !== false || strpos($screen->id, 'gravityforms') !== false);
-        if ($is_gf_page || (isset($_GET['page']) && strpos(sanitize_text_field(wp_unslash($_GET['page'])), 'gf_') === 0)) {
-            $localize_data['nonce'] = wp_create_nonce('gfcs_export_csv');
-            $localize_data['ajaxurl'] = admin_url('admin-ajax.php');
-        }
 
         wp_localize_script(
             'gfcs-admin',
@@ -341,7 +349,7 @@ JS;
         <script type='text/javascript'>
             // Register field settings with Gravity Forms editor
             // This must be inline as it needs to execute at the correct GF initialization time
-            if (typeof fieldSettings !== 'undefined') {
+            if (typeof fieldSettings !== 'undefined' && fieldSettings.chainedselect.indexOf('.auto_select_setting') === -1) {
                 fieldSettings.chainedselect += ', .auto_select_setting, .auto_select_single_readonly_setting, .hide_columns_setting, .full_width_setting, .gfcs_sub_label_width_setting, .csv_export_setting';
             }
 
@@ -1711,13 +1719,28 @@ JS;
 
         if (!empty($css_rules)) {
             $css = implode(' ', $css_rules);
-            // Output CSS in footer to ensure it loads after form
-            add_action('wp_footer', function() use ($css) {
-                echo '<style type="text/css">' . wp_strip_all_tags($css) . '</style>';
-            }, 100);
+            $this->pending_inline_css .= ('' !== $this->pending_inline_css ? ' ' : '') . $css;
+
+            if (!has_action('wp_footer', array($this, 'print_inline_css'))) {
+                add_action('wp_footer', array($this, 'print_inline_css'), 100);
+            }
         }
 
         return $form;
+    }
+
+    /**
+     * Print accumulated inline CSS in the footer.
+     *
+     * Called once via wp_footer to output all field-specific CSS rules.
+     *
+     * @return void
+     */
+    public function print_inline_css(): void
+    {
+        if ('' !== $this->pending_inline_css) {
+            echo '<style type="text/css">' . wp_strip_all_tags($this->pending_inline_css) . '</style>';
+        }
     }
 
     /**

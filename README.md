@@ -109,6 +109,15 @@ add_filter( 'gform_chainedselects_column_unique_values_limit', function ( $limit
 
 ## Changelog
 
+### 2.1.4 - 2026-06-05
+- **Security:** Imported choice values are now sanitized with `sanitize_text_field` instead of `wp_kses('post')`, closing an XSS surface on crafted CSV/XLSX payloads
+- **Security:** Removed the contradictory `LIBXML_NOENT` flag from the XLSX parser so XXE protection is no longer weakened on PHP 8.0+
+- **Fixed:** Error messages during file upload now use the plugin's own text domain instead of `gravityforms`, so translations are picked up correctly
+- **Fixed:** The `fieldSettings.chainedselect` editor registration no longer accumulates duplicate entries on repeated editor opens
+- **Improved:** Admin CSS and JS are now loaded only on Gravity Forms screens instead of every admin page
+- **Improved:** The inline footer CSS for hidden columns and full-width fields is now deduplicated into a single `<style>` block regardless of how many forms are rendered
+- **Improved:** Unique-value limit checks during import now use O(1) lookups instead of O(n) scans
+
 ### 2.1.3 - 2026-05-21
 - **Fixed:** XLSX upload validation no longer fatally errors on hosts where `ZipArchive` is available but the `ZipArchive::RDONLY` constant is not exposed
 

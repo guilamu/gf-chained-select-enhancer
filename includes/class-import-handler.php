@@ -116,7 +116,7 @@ class GFCS_Import_Handler
         // Capability check - nonce alone is not authorization
         if (!current_user_can('gravityforms_edit_forms') && !current_user_can('manage_options')) {
             if (class_exists('GFAsyncUpload')) {
-                GFAsyncUpload::die_error(403, esc_html__('Permission denied.', 'gravityforms'));
+                GFAsyncUpload::die_error(403, esc_html__('Permission denied.', 'gf-chained-select-enhancer'));
             }
             wp_die(esc_html__('Permission denied.', 'gf-chained-select-enhancer'), '', array('response' => 403));
         }
@@ -124,7 +124,7 @@ class GFCS_Import_Handler
         // Verify nonce
         if (!wp_verify_nonce(rgpost('_gform_file_upload_nonce_' . $form['id']), 'gform_file_upload_' . $form['id'])) {
             if (class_exists('GFAsyncUpload')) {
-                GFAsyncUpload::die_error(403, esc_html__('Permission denied.', 'gravityforms'));
+                GFAsyncUpload::die_error(403, esc_html__('Permission denied.', 'gf-chained-select-enhancer'));
             }
             wp_die(esc_html__('Permission denied.', 'gf-chained-select-enhancer'), '', array('response' => 403));
         }
@@ -492,7 +492,7 @@ class GFCS_Import_Handler
      */
     private function sanitize_choice_value($value)
     {
-        return wp_kses($value, 'post');
+        return sanitize_text_field($value);
     }
 
     /**
@@ -523,8 +523,8 @@ class GFCS_Import_Handler
                     continue;
                 }
 
-                if (!in_array($item, $uniques[$column])) {
-                    $uniques[$column][] = $item;
+                if (!isset($uniques[$column][$item])) {
+                    $uniques[$column][$item] = true;
                 }
 
                 if (count($uniques[$column]) > $limit) {

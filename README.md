@@ -1,5 +1,7 @@
 # Chained Select Enhancer for Gravity Forms
 
+[![Latest Release](https://img.shields.io/github/v/release/guilamu/gf-chained-select-enhancer?color=blue)](https://github.com/guilamu/gf-chained-select-enhancer/releases) [![License: AGPL-3.0](https://img.shields.io/badge/license-AGPL--3.0-green.svg)](LICENSE.txt) [![WordPress: 5.8+](https://img.shields.io/badge/WordPress-5.8%2B-blue.svg)](https://wordpress.org) [![PHP: 7.4+](https://img.shields.io/badge/PHP-7.4%2B-purple.svg)](https://php.net)
+
 Enhances Gravity Forms Chained Selects with auto-select, left-aligned labels, column sections, XLSX import, and CSV export.
 
 ## Field Behavior
@@ -45,13 +47,14 @@ Enhances Gravity Forms Chained Selects with auto-select, left-aligned labels, co
 - PHP ZipArchive extension for XLSX import
 - WordPress 5.8 or higher
 - PHP 7.4 or higher
+- Tested up to WordPress 6.8
 
 ## Installation
 
 1. Upload the `gf-chained-select-enhancer` folder to `/wp-content/plugins/`
 2. Activate the plugin through the **Plugins** menu in WordPress
 3. Go to **Forms → Your Form** and add or edit a Chained Select field
-4. Upload a CSV or XLSX source file if you want to import choices
+4. *(Optional)* Upload a CSV or XLSX source file if you want to import choices
 5. Configure auto-select, layout, sections, and export options from the field settings panel
 
 ## FAQ
@@ -62,7 +65,7 @@ In the form editor, select your Chained Select field. In the field settings pane
 
 ### How do I place labels on the left or create sections?
 
-In the field editor, choose "To the left of the field" for sub-label placement. Use "Manage Columns" to create titled sections and organize the columns shown on the frontend. Section headers intentionally stay focused on the title and actions, without showing present/hidden column counters. Use the side-by-side button on a section header to display that section next to the following one.
+In the field editor, choose "To the left of the field" for sub-label placement. Use "Manage Columns" to create titled sections and organize the columns shown on the frontend. Use the side-by-side button on a section header to display that section next to the following one.
 
 ### How do I hide columns?
 
@@ -72,15 +75,19 @@ In the field settings, use the toggle switches under "Hide Columns" to show/hide
 
 Select your Chained Select field in the form editor. Click the "Export Choices" button in the field settings panel. The CSV will download automatically.
 
-### Can I increase the unique value limit for imports?
+### How do I increase the unique value limit for imports?
 
-Yes. The enhancer respects the `gform_chainedselects_column_unique_values_limit` filter used during CSV and XLSX imports:
+Yes. The enhancer respects the `gform_chainedselects_column_unique_values_limit` filter used during CSV and XLSX imports. The legacy filter name `gravityformschainedselects_column_unique_values_limit` (without underscores between words) is also honoured for backward compatibility.
 
 ```php
 add_filter( 'gform_chainedselects_column_unique_values_limit', function ( $limit ) {
   return 10000;
 } );
 ```
+
+### How do I manage automatic updates from GitHub?
+
+The plugin includes a built-in GitHub updater that checks the [GitHub Releases](https://github.com/guilamu/gf-chained-select-enhancer/releases) page for new versions. Only tagged releases are served — pre-releases are ignored. Updates appear in the WordPress dashboard like any other plugin update. To disable the updater, add `define( 'GFCS_DISABLE_GITHUB_UPDATER', true );` to your `wp-config.php`.
 
 ## Project Structure
 
@@ -118,7 +125,7 @@ add_filter( 'gform_chainedselects_column_unique_values_limit', function ( $limit
 - **Improved:** The inline footer CSS for hidden columns and full-width fields is now deduplicated into a single `<style>` block regardless of how many forms are rendered
 - **Improved:** Unique-value limit checks during import now use O(1) lookups instead of O(n) scans
 
-### 2.1.3 - 2026-05-21
+### 2.1.3 - 2026-05-21 (hotfix)
 - **Fixed:** XLSX upload validation no longer fatally errors on hosts where `ZipArchive` is available but the `ZipArchive::RDONLY` constant is not exposed
 
 ### 2.1.2 - 2026-05-21
@@ -181,7 +188,7 @@ add_filter( 'gform_chainedselects_column_unique_values_limit', function ( $limit
 - **New:** Left sub-label placement support for chained select fields with matching backend preview styling
 - **New:** Column sections manager with grouped sections, inline rename, collapse controls, and frontend section headings
 - **Improved:** Builder preview now more closely matches the frontend markup and layout
-- **Improved:** Column and frontend labels now truncate cleanly with ellipsis when space is limited
+- **Improved:** Column and frontend labels now truncate cleanly with ellipsis when space is limited (uses `text-overflow: ellipsis`; native `<select>` ellipsis rendering is browser-dependent)
 
 ### 1.8.3 - 2026-05-10
 - **Fixed:** "View details" popup no longer fails with "Plugin not found" on sites where another plugin mutates the `plugins_api_result` payload
@@ -218,6 +225,9 @@ add_filter( 'gform_chainedselects_column_unique_values_limit', function ( $limit
 - **New:** Native PHP ZipArchive-based XLSX parser with no external dependencies
 - **Improved:** Code cleanup and optimization
 
+### 1.6.x
+- Internal development versions — not publicly released
+
 ### 1.5.3 - 2026-01-11
 - **Fixed:** Removed excessive spacing in the backend editor when labels are hidden after the main add-on update
 
@@ -245,17 +255,31 @@ add_filter( 'gform_chainedselects_column_unique_values_limit', function ( $limit
 ### 1.2.0 - 2025-11-06
 - **New:** CSV export functionality for chained select choices
 
-### Legacy versions
-- **1.1.0:** Improved column hiding with toggle switches
-- **1.0.1:** Fixed hidden columns now properly hide on the frontend
-- **1.0.0:** Initial release with auto-select, column hiding, and full-width vertical display
+## Legacy versions
+
+### 1.1.0
+- Improved column hiding with toggle switches
+
+### 1.0.1
+- Fixed hidden columns now properly hide on the frontend
+
+### 1.0.0
+- Initial release with auto-select, column hiding, and full-width vertical display
+
+## Security
+
+If you discover a security vulnerability in this plugin, please report it responsibly through [GitHub Security Advisories](https://github.com/guilamu/gf-chained-select-enhancer/security/advisories/new). Do not open a public issue for security reports.
+
+## Contributing
+
+Contributions are welcome! Please open an issue or submit a pull request on [GitHub](https://github.com/guilamu/gf-chained-select-enhancer).
+
+For translations, the plugin uses WordPress i18n. You can contribute translations by editing the `.po` files in the `languages/` directory and generating the corresponding `.mo` files with the `wp i18n` CLI commands.
 
 ## License
 
-This project is licensed under the GNU Affero General Public License v3.0 (AGPL-3.0) - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the GNU Affero General Public License v3.0 (AGPL-3.0) — see the [LICENSE](LICENSE.txt) file for details.
 
 ---
 
-<p align="center">
-  Made with love for the WordPress community
-</p>
+Made with love for the WordPress community
